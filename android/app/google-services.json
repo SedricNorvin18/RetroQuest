@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "696296785579",
+    "firebase_url": "https://retroquestapp-default-rtdb.firebaseio.com",
+    "project_id": "retroquestapp",
+    "storage_bucket": "retroquestapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:696296785579:android:9fcf97cbab597a6b4cd9ee",
+        "android_client_info": {
+          "package_name": "com.example.retroquest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-V08NqTl4PAVVSf3hF1nK3_UMLtQNmYY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
