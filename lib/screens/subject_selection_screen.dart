@@ -10,8 +10,10 @@ class SubjectSelectionScreen extends StatelessWidget {
     "Chemistry",
     "IT",
     "Computer Science",
-  "Geography",
+    "Geography",
   ];
+
+  SubjectSelectionScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

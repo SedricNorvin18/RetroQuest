@@ -180,9 +180,9 @@ class _SignupScreenState extends State<SignupScreen> {
 
                       // Role Dropdown
                       DropdownButtonFormField<String>(
-                        value: role,
+                        initialValue: role,
                         dropdownColor: Colors.black87,
-                        style: const TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.black),
                         decoration: InputDecoration(
                           filled: true,
                           fillColor: Colors.black54,

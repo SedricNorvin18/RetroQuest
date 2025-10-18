@@ -60,11 +60,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD-V08NqTl4PAVVSf3hF1nK3_UMLtQNmYY',
+    apiKey: 'AIzaSyD7FDxgpBKsK9CaqO-GqqZ5Li0tbsMAxPo',
     appId: '1:696296785579:android:9fcf97cbab597a6b4cd9ee',
     messagingSenderId: '696296785579',
     projectId: 'retroquestapp',
     databaseURL: 'https://retroquestapp-default-rtdb.firebaseio.com',
     storageBucket: 'retroquestapp.firebasestorage.app',
   );
+
 }

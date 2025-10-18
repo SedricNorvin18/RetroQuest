@@ -18,13 +18,22 @@ class Question {
   });
 
   factory Question.fromMap(String id, Map<String, dynamic> map) {
+    final Map<String, bool> newOptions = {};
+    if (map['options'] is Map) {
+      (map['options'] as Map).forEach((key, value) {
+        if (value is bool) {
+          newOptions[key.toString()] = value;
+        }
+      });
+    }
+
     return Question(
       id: id,
-      title: map['title'] ?? '',
-      options: Map<String, bool>.from(map['options'] ?? {}),
-      imageUrl: map['imageUrl'],
-      fileUrl: map['fileUrl'],
-      createdBy: map['createdBy'],
+      title: map['title'] is String ? map['title'] : '',
+      options: newOptions,
+      imageUrl: map['imageUrl'] is String ? map['imageUrl'] : null,
+      fileUrl: map['fileUrl'] is String ? map['fileUrl'] : null,
+      createdBy: map['createdBy'] is String ? map['createdBy'] : null,
     );
   }
 

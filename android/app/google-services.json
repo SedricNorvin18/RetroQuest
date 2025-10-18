@@ -13,15 +13,25 @@
           "package_name": "com.example.retroquest"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "696296785579-n05qm6cqkg9bqafpoap5an9qhta69sd1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyD-V08NqTl4PAVVSf3hF1nK3_UMLtQNmYY"
+          "current_key": "AIzaSyD7FDxgpBKsK9CaqO-GqqZ5Li0tbsMAxPo"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "696296785579-n05qm6cqkg9bqafpoap5an9qhta69sd1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

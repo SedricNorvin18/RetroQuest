@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../constants.dart';
 import '../models/question_model.dart';
 import '../widgets/question_widget.dart';
 import '../widgets/result_box.dart';

@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart'; // ✅ add this
-import 'screens/login_screen.dart';
-import 'screens/subject_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'firebase_options.dart';
+import 'screens/welcome_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform, // ✅ use generated config
+    options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp());
 }
@@ -22,8 +22,11 @@ class MyApp extends StatelessWidget {
       title: "RetroQuiz",
       theme: ThemeData(
         primarySwatch: Colors.deepPurple,
+        textTheme: GoogleFonts.pixelifySansTextTheme(
+          Theme.of(context).textTheme,
+        ),
       ),
-      home: const LoginScreen(),
+      home: const WelcomeScreen(),
     );
   }
 }

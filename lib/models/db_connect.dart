@@ -12,8 +12,15 @@ class DbConnect {
         .orderBy("createdAt", descending: false)
         .get();
 
-    return snapshot.docs
-        .map((doc) => Question.fromMap(doc.id, doc.data()))
-        .toList();
+    final questions = <Question>[];
+    for (final doc in snapshot.docs) {
+      try {
+        questions.add(Question.fromMap(doc.id, doc.data()));
+      } catch (e, stackTrace) {
+        print('Error parsing question ${doc.id}: $e');
+        print(stackTrace);
+      }
+    }
+    return questions;
   }
 }

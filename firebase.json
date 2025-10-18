@@ -1,1 +1,31 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"retroquestapp","appId":"1:696296785579:android:9fcf97cbab597a6b4cd9ee","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"retroquestapp","configurations":{"android":"1:696296785579:android:9fcf97cbab597a6b4cd9ee","web":"1:696296785579:web:d93002f021f4463c4cd9ee"}}}}}}
+
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "retroquestapp",
+          "appId": "1:696296785579:android:9fcf97cbab597a6b4cd9ee",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "retroquestapp",
+          "configurations": {
+            "android": "1:696296785579:android:9fcf97cbab597a6b4cd9ee",
+            "web": "1:696296785579:web:d93002f021f4463c4cd9ee"
+          }
+        }
+      }
+    }
+  }
+}

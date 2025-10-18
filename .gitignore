@@ -5,41 +5,71 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
-migrate_working_dir/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
-
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
-
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
-.dart_tool/
+# Flutter specific
+.flutter-plugins
 .flutter-plugins-dependencies
+.packages
 .pub-cache/
 .pub/
 /build/
-/coverage/
 
-# Symbolication related
-app.*.symbols
+# IntelliJ
+.idea/
+*.iml
+*.ipr
+*.iws
 
-# Obfuscation related
-app.*.map.json
+# Visual Studio Code
+.vscode/
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Android
+/android/gradle/
+/android/gradlew
+/android/gradlew.bat
+/android/local.properties
+/android/key.properties
+/android/.gradle/
+/android/app/src/main/assets/flutter_assets/
+/android/app/build/
+/android/app/intermediates/
+/android/app/outputs/
+
+# iOS
+/ios/Flutter/App.framework
+/ios/Flutter/Flutter.framework
+/ios/Flutter/engine
+/ios/Flutter/flutter_assets
+/ios/Flutter/gen_inputs_and_outputs.json
+/ios/Flutter/Generated.xcconfig
+/ios/Flutter/app.flx
+/ios/Flutter/snapshot_blob.bin
+/ios/Flutter/vm_snapshot_data
+/ios/Flutter/isolate_snapshot_data
+/ios/Flutter/vm_snapshot_instr
+/ios/Flutter/isolate_snapshot_instr
+/ios/Pods/
+/ios/Runner/GeneratedPluginRegistrant.h
+/ios/Runner/GeneratedPluginRegistrant.m
+/ios/Runner/Runner-Bridging-Header.h
+/ios/Runner/Runner.xcworkspace/contents.xcworkspacedata
+/ios/Runner.xcodeproj/project.xcworkspace/
+/ios/Runner.xcodeproj/xcuserdata/
+/ios/ServiceDefinitions.json
+
+# macOS
+/macos/Flutter/ephemeral
+/macos/Pods/
+/macos/Runner.xcworkspace/contents.xcworkspacedata
+/macos/Runner.xcodeproj/project.xcworkspace/
+/macos/Runner.xcodeproj/xcuserdata/
+
+# Linux
+/linux/flutter/ephemeral
+/linux/CMakeLists.txt.user
+
+# Windows
+/windows/flutter/ephemeral

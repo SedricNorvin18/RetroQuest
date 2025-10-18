@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 
 class QuestionWidget extends StatelessWidget {
-  const QuestionWidget({Key? key, required this.question, 
-  required this.indexAction, required this.totalQuestions}) : super(key: key);
+  const QuestionWidget({super.key, required this.question, 
+  required this.indexAction, required this.totalQuestions});
 
 final String question;
 final int indexAction;
