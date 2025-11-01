@@ -23,20 +23,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.android:
         return android;
       case TargetPlatform.iOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return ios;
       case TargetPlatform.macOS:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return macos;
       case TargetPlatform.windows:
-        throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for windows - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
-        );
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -50,22 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyD7FDxgpBKsK9CaqO-GqqZ5Li0tbsMAxPo',
-    appId: '1:696296785579:web:d93002f021f4463c4cd9ee',
-    messagingSenderId: '696296785579',
-    projectId: 'retroquestapp',
-    authDomain: 'retroquestapp.firebaseapp.com',
-    databaseURL: 'https://retroquestapp-default-rtdb.firebaseio.com',
-    storageBucket: 'retroquestapp.firebasestorage.app',
+    apiKey: 'AIzaSyCGorbwSYT9yXLDf_fr3FCjXy2lwQ6XKlc',
+    appId: '1:694711600391:web:2b2df1fbdff0d3fbb6b1a2',
+    messagingSenderId: '694711600391',
+    projectId: 'retroquest-11331898-85115',
+    authDomain: 'retroquest-11331898-85115.firebaseapp.com',
+    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyD7FDxgpBKsK9CaqO-GqqZ5Li0tbsMAxPo',
-    appId: '1:696296785579:android:9fcf97cbab597a6b4cd9ee',
-    messagingSenderId: '696296785579',
-    projectId: 'retroquestapp',
-    databaseURL: 'https://retroquestapp-default-rtdb.firebaseio.com',
-    storageBucket: 'retroquestapp.firebasestorage.app',
+    apiKey: 'AIzaSyDF63SPQsVDzs7IJLSGb2bI3NmKEcOKrcI',
+    appId: '1:694711600391:android:3e288d8a349fb501b6b1a2',
+    messagingSenderId: '694711600391',
+    projectId: 'retroquest-11331898-85115',
+    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+  );
+
+  static const FirebaseOptions macos = FirebaseOptions(
+    apiKey: 'AIzaSyD0s0eDKEAR2GZAbsHW-cyqSxTdr624ZCI',
+    appId: '1:694711600391:ios:762b1b02dd29e02bb6b1a2',
+    messagingSenderId: '694711600391',
+    projectId: 'retroquest-11331898-85115',
+    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    iosClientId: '694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com',
+    iosBundleId: 'com.example.tempProject',
+  );
+
+  static const FirebaseOptions ios = FirebaseOptions(
+    apiKey: 'AIzaSyD0s0eDKEAR2GZAbsHW-cyqSxTdr624ZCI',
+    appId: '1:694711600391:ios:762b1b02dd29e02bb6b1a2',
+    messagingSenderId: '694711600391',
+    projectId: 'retroquest-11331898-85115',
+    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    iosClientId: '694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com',
+    iosBundleId: 'com.example.tempProject',
+  );
+
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyCGorbwSYT9yXLDf_fr3FCjXy2lwQ6XKlc',
+    appId: '1:694711600391:web:425fd6553519709bb6b1a2',
+    messagingSenderId: '694711600391',
+    projectId: 'retroquest-11331898-85115',
+    authDomain: 'retroquest-11331898-85115.firebaseapp.com',
+    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
   );
 
 }

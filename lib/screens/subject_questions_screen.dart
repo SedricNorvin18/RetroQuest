@@ -35,12 +35,12 @@ class SubjectScreen extends StatelessWidget {
             padding: const EdgeInsets.all(24),
             margin: const EdgeInsets.symmetric(horizontal: 20),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.8),
+              color: Colors.black.withAlpha(204),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.greenAccent, width: 1.5),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.greenAccent.withOpacity(0.4),
+                  color: Colors.greenAccent.withAlpha(102),
                   blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),

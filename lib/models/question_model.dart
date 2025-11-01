@@ -2,45 +2,41 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class Question {
   final String id;
-  final String title;
-  final Map<String, bool> options;
+  final String text;
+  final List<String> options;
+  final String correctAnswer;
   final String? imageUrl;
   final String? fileUrl;
   final String? createdBy;
 
   Question({
     required this.id,
-    required this.title,
+    required this.text,
     required this.options,
+    required this.correctAnswer,
     this.imageUrl,
     this.fileUrl,
     this.createdBy,
   });
 
-  factory Question.fromMap(String id, Map<String, dynamic> map) {
-    final Map<String, bool> newOptions = {};
-    if (map['options'] is Map) {
-      (map['options'] as Map).forEach((key, value) {
-        if (value is bool) {
-          newOptions[key.toString()] = value;
-        }
-      });
-    }
-
+  factory Question.fromFirestore(DocumentSnapshot doc) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Question(
-      id: id,
-      title: map['title'] is String ? map['title'] : '',
-      options: newOptions,
-      imageUrl: map['imageUrl'] is String ? map['imageUrl'] : null,
-      fileUrl: map['fileUrl'] is String ? map['fileUrl'] : null,
-      createdBy: map['createdBy'] is String ? map['createdBy'] : null,
+      id: doc.id,
+      text: data['text'] ?? '',
+      options: List<String>.from(data['options'] ?? []),
+      correctAnswer: data['correctAnswer'] ?? '',
+      imageUrl: data['imageUrl'],
+      fileUrl: data['fileUrl'],
+      createdBy: data['createdBy'],
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'title': title,
+      'text': text,
       'options': options,
+      'correctAnswer': correctAnswer,
       'imageUrl': imageUrl,
       'fileUrl': fileUrl,
       'createdBy': createdBy,

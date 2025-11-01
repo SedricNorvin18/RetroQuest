@@ -1,12 +1,11 @@
+plugins {
+    id("com.google.gms.google-services") version "4.4.1" apply false
+}
 allprojects {
     repositories {
         google()
         mavenCentral()
     }
-}
-plugins {
-    // make the google services plugin available to subprojects (apply false so subprojects can apply it)
-    id("com.google.gms.google-services") version "4.4.2" apply false
 }
 
 val newBuildDir: Directory =

@@ -157,7 +157,7 @@ class StudentScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const SubjectScreen()),
+                      builder: (context) => const SubjectScreen(subject: '',)),
                 );
               },
             ),

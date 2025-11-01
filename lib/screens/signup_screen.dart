@@ -10,42 +10,79 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  final firstNameController = TextEditingController();
-  final lastNameController = TextEditingController();
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  String role = "student";
+  final _formKey = GlobalKey<FormState>();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  String _role = "student";
+  bool _isLoading = false;
 
-  Future<void> signup() async {
+  @override
+  void dispose() {
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _signup() async {
+    if (!mounted || !_formKey.currentState!.validate()) return;
+
+    if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Passwords do not match!")),
+        );
+      }
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
     try {
       final userCredential =
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
 
-      final uid = userCredential.user!.uid;
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception("User creation failed, please try again.");
+      }
 
-      await FirebaseFirestore.instance.collection('users').doc(uid).set({
-        "firstName": firstNameController.text.trim(),
-        "lastName": lastNameController.text.trim(),
-        "email": emailController.text.trim(),
-        "role": role,
+      final fullName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
+        "firstName": _firstNameController.text.trim(),
+        "lastName": _lastNameController.text.trim(),
+        "name": fullName,
+        "email": _emailController.text.trim(),
+        "role": _role,
       });
 
-      await userCredential.user!.updateDisplayName(
-        "${firstNameController.text.trim()} ${lastNameController.text.trim()}",
-      );
+      await user.updateDisplayName(fullName);
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signup successful! Please login.")),
-      );
-
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Signup successful! Please login.")),
+        );
+        Navigator.pop(context);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Signup failed: $e")),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Signup failed: $e")),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -55,27 +92,22 @@ class _SignupScreenState extends State<SignupScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ✅ Background image
           Image.asset(
             'assets/images/retro_bg.jpg',
             fit: BoxFit.cover,
           ),
-
-          // ✅ Slight dark overlay for readability
-          Container(color: Colors.black.withOpacity(0.6)),
-
-          // ✅ Scrollable content
+          Container(color: Colors.black.withAlpha(153)), // Deprecated API
           Center(
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.7),
+                  color: Colors.black.withAlpha(179), // Deprecated API
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.greenAccent, width: 1.5),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.greenAccent.withOpacity(0.5),
+                      color: Colors.greenAccent.withAlpha(128), // Deprecated API
                       blurRadius: 10,
                       spreadRadius: 3,
                     ),
@@ -83,183 +115,226 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(28.0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "Join RetroQuest",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.greenAccent,
-                          fontFamily: "PressStart2P",
-                          shadows: [
-                            Shadow(
-                              color: Colors.black,
-                              blurRadius: 4,
-                              offset: Offset(2, 2),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          "Join RetroQuest",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.greenAccent,
+                            fontFamily: "PressStart2P",
+                            shadows: [
+                              Shadow(
+                                color: Colors.black,
+                                blurRadius: 4,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 30),
+                        TextFormField(
+                          controller: _firstNameController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "First Name",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon:
+                                const Icon(Icons.person, color: Colors.greenAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your first name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _lastNameController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "Last Name",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: const Icon(Icons.person_outline,
+                                color: Colors.pinkAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your last name';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _emailController,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "Email",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon: const Icon(Icons.email,
+                                color: Colors.greenAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your email';
+                            }
+                            if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                              return 'Please enter a valid email';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          style: const TextStyle(color: Colors.white),
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "Password",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon:
+                                const Icon(Icons.lock, color: Colors.pinkAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _confirmPasswordController,
+                          style: const TextStyle(color: Colors.white),
+                          obscureText: true,
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "Confirm Password",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            prefixIcon:
+                                const Icon(Icons.lock, color: Colors.pinkAccent),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        DropdownButtonFormField<String>(
+                          initialValue: _role,
+                          dropdownColor: Colors.black87,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.black54,
+                            labelText: "Select Role",
+                            labelStyle: const TextStyle(color: Colors.white70),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          items: const [
+                            DropdownMenuItem(
+                              value: "student",
+                              child: Text("Student"),
+                            ),
+                            DropdownMenuItem(
+                              value: "teacher",
+                              child: Text("Teacher"),
                             ),
                           ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => _role = value);
+                            }
+                          },
                         ),
-                      ),
-                      const SizedBox(height: 30),
-
-                      // ✅ First Name
-                      TextField(
-                        controller: firstNameController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black54,
-                          labelText: "First Name",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon:
-                              const Icon(Icons.person, color: Colors.greenAccent),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // ✅ Last Name
-                      TextField(
-                        controller: lastNameController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black54,
-                          labelText: "Last Name",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.person_outline,
-                              color: Colors.pinkAccent),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Email
-                      TextField(
-                        controller: emailController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black54,
-                          labelText: "Email",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.email,
-                              color: Colors.greenAccent),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Password
-                      TextField(
-                        controller: passwordController,
-                        style: const TextStyle(color: Colors.white),
-                        obscureText: true,
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black54,
-                          labelText: "Password",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon:
-                              const Icon(Icons.lock, color: Colors.pinkAccent),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Role Dropdown
-                      DropdownButtonFormField<String>(
-                        initialValue: role,
-                        dropdownColor: Colors.black87,
-                        style: const TextStyle(color: Colors.black),
-                        decoration: InputDecoration(
-                          filled: true,
-                          fillColor: Colors.black54,
-                          labelText: "Select Role",
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: "student",
-                            child: Text("Student",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                          DropdownMenuItem(
-                            value: "teacher",
-                            child: Text("Teacher",
-                                style: TextStyle(color: Colors.white)),
-                          ),
-                        ],
-                        onChanged: (value) => setState(() => role = value!),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Signup Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            backgroundColor: Colors.greenAccent,
-                            foregroundColor: Colors.black,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              backgroundColor: Colors.greenAccent,
+                              foregroundColor: Colors.black,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
+                            onPressed: _isLoading ? null : _signup,
+                            child: _isLoading
+                                ? const CircularProgressIndicator(color: Colors.black)
+                                : const Text(
+                                    "SIGN UP",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
                           ),
-                          onPressed: signup,
-                          child: const Text(
-                            "SIGN UP",
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 2,
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: const BorderSide(
+                                  color: Colors.greenAccent, width: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_back,
+                                color: Colors.greenAccent),
+                            label: const Text(
+                              "BACK",
+                              style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 14,
+                                fontFamily: "PressStart2P",
+                                letterSpacing: 2,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Back Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            side: const BorderSide(
-                                color: Colors.greenAccent, width: 2),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          onPressed: () => Navigator.pop(context),
-                          icon: const Icon(Icons.arrow_back,
-                              color: Colors.greenAccent),
-                          label: const Text(
-                            "BACK",
-                            style: TextStyle(
-                              color: Colors.greenAccent,
-                              fontSize: 14,
-                              fontFamily: "PressStart2P",
-                              letterSpacing: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

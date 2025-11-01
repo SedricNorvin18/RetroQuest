@@ -61,11 +61,11 @@ class _ResultBoxState extends State<ResultBox>
           width: sizeParticle,
           height: sizeParticle,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
+            color: color.withAlpha(38),
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.1),
+                color: color.withAlpha(26),
                 blurRadius: 2,
                 spreadRadius: 0.5,
               ),
@@ -101,7 +101,7 @@ class _ResultBoxState extends State<ResultBox>
               border: Border.all(color: Colors.white12),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.6),
+                  color: Colors.black.withAlpha(153),
                   blurRadius: 15,
                   offset: const Offset(0, 6),
                 ),
@@ -119,7 +119,7 @@ class _ResultBoxState extends State<ResultBox>
                     color: Colors.cyanAccent.shade100,
                     shadows: [
                       Shadow(
-                        color: Colors.cyanAccent.withOpacity(0.5),
+                        color: Colors.cyanAccent.withAlpha(128),
                         blurRadius: 10,
                       ),
                     ],
@@ -142,7 +142,7 @@ class _ResultBoxState extends State<ResultBox>
                       color: medalData["color"],
                       shadows: [
                         Shadow(
-                          color: medalData["color"].withOpacity(0.4),
+                          color: medalData["color"].withAlpha(102),
                           blurRadius: 20,
                         ),
                       ],
@@ -156,11 +156,11 @@ class _ResultBoxState extends State<ResultBox>
                       const EdgeInsets.symmetric(vertical: 14, horizontal: 32),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(22),
-                    color: Colors.black.withOpacity(0.3),
+                    color: Colors.black.withAlpha(77),
                     border: Border.all(color: Colors.white24),
                     boxShadow: [
                       BoxShadow(
-                        color: medalData["color"].withOpacity(0.3),
+                        color: medalData["color"].withAlpha(77),
                         blurRadius: 15,
                         spreadRadius: 2,
                       ),
@@ -204,13 +204,13 @@ class _ResultBoxState extends State<ResultBox>
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
             colors: [
-              color.withOpacity(0.7),
-              color.withOpacity(0.9),
+              color.withAlpha(179),
+              color.withAlpha(230),
             ],
           ),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.4),
+              color: color.withAlpha(102),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
