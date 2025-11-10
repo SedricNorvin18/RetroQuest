@@ -4,8 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
-import 'screens/auth_gate.dart';
+import 'services/auth_service.dart';
+import 'screens/initial_gate.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,16 +34,19 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: "RetroQuiz",
-      theme: ThemeData(
-        primarySwatch: Colors.deepPurple,
-        textTheme: GoogleFonts.pixelifySansTextTheme(
-          Theme.of(context).textTheme,
+    return Provider<AuthService>(
+      create: (_) => AuthService(),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: "RetroQuiz",
+        theme: ThemeData(
+          primarySwatch: Colors.deepPurple,
+          textTheme: GoogleFonts.pixelifySansTextTheme(
+            Theme.of(context).textTheme,
+          ),
         ),
+        home: const InitialGate(),
       ),
-      home: const AuthGate(),
     );
   }
 }

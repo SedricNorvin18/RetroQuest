@@ -46,7 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '694711600391',
     projectId: 'retroquest-11331898-85115',
     authDomain: 'retroquest-11331898-85115.firebaseapp.com',
-    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    storageBucket: 'retroquest-11331898-85115.appspot.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -54,15 +54,15 @@ class DefaultFirebaseOptions {
     appId: '1:694711600391:android:3e288d8a349fb501b6b1a2',
     messagingSenderId: '694711600391',
     projectId: 'retroquest-11331898-85115',
-    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    storageBucket: 'retroquest-11331898-85115.appspot.com',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyD0s0eDKEAR2GZAbsHW-cyqSxTdr624ZCI',
-    appId: '1:694711600391:ios:762b1b02dd29e02bb6b1a2',
+    appId: '1LAGA611600391:ios:762b1b02dd29e02bb6b1a2',
     messagingSenderId: '694711600391',
     projectId: 'retroquest-11331898-85115',
-    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    storageBucket: 'retroquest-11331898-85115.appspot.com',
     iosClientId: '694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com',
     iosBundleId: 'com.example.tempProject',
   );
@@ -72,7 +72,7 @@ class DefaultFirebaseOptions {
     appId: '1:694711600391:ios:762b1b02dd29e02bb6b1a2',
     messagingSenderId: '694711600391',
     projectId: 'retroquest-11331898-85115',
-    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    storageBucket: 'retroquest-11331898-85115.appspot.com',
     iosClientId: '694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com',
     iosBundleId: 'com.example.tempProject',
   );
@@ -83,7 +83,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '694711600391',
     projectId: 'retroquest-11331898-85115',
     authDomain: 'retroquest-11331898-85115.firebaseapp.com',
-    storageBucket: 'retroquest-11331898-85115.firebasestorage.app',
+    storageBucket: 'retroquest-11331898-85115.appspot.com',
   );
 
 }

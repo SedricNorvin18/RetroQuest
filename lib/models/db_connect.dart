@@ -1,8 +1,27 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'question_model.dart';
 
 class DbConnect {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  Future<void> saveQuizAttempt({
+    required int score,
+    required String subjectId,
+    required String teacherId,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    await _firestore.collection('quiz_attempts').add({
+      'studentId': user.uid,
+      'studentName': user.displayName,
+      'score': score,
+      'subjectId': subjectId,
+      'teacherId': teacherId,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
 
   Future<List<Question>> fetchQuestions(
       {required String subject, String? teacherId}) async {

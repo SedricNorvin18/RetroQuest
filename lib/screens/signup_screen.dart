@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:retroquest/screens/email_verification_screen.dart';
+import '../services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -44,34 +45,20 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final userCredential =
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final fullName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
+      await authService.signUp(
+        _emailController.text.trim(),
+        _passwordController.text.trim(),
+        fullName,
+        _role,
       );
 
-      final user = userCredential.user;
-      if (user == null) {
-        throw Exception("User creation failed, please try again.");
-      }
-
-      final fullName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
-
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-        "firstName": _firstNameController.text.trim(),
-        "lastName": _lastNameController.text.trim(),
-        "name": fullName,
-        "email": _emailController.text.trim(),
-        "role": _role,
-      });
-
-      await user.updateDisplayName(fullName);
-
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Signup successful! Please login.")),
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -96,248 +83,257 @@ class _SignupScreenState extends State<SignupScreen> {
             'assets/images/retro_bg.jpg',
             fit: BoxFit.cover,
           ),
-          Container(color: Colors.black.withAlpha(153)), // Deprecated API
+          Container(color: Colors.black.withAlpha(153)),
           Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withAlpha(179), // Deprecated API
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.greenAccent, width: 1.5),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.greenAccent.withAlpha(128), // Deprecated API
-                      blurRadius: 10,
-                      spreadRadius: 3,
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(28.0),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          "Join RetroQuest",
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.greenAccent,
-                            fontFamily: "PressStart2P",
-                            shadows: [
-                              Shadow(
-                                color: Colors.black,
-                                blurRadius: 4,
-                                offset: Offset(2, 2),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxWidth: 500,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withAlpha(178),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.greenAccent, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.greenAccent.withAlpha(128),
+                            blurRadius: 10,
+                            spreadRadius: 3,
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(28.0),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                "Join RetroQuest",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.greenAccent,
+                                  fontFamily: "PressStart2P",
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black,
+                                      blurRadius: 4,
+                                      offset: Offset(2, 2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 30),
+                              TextFormField(
+                                controller: _firstNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "First Name",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  prefixIcon:
+                                      const Icon(Icons.person, color: Colors.greenAccent),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your first name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _lastNameController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "Last Name",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.person_outline,
+                                      color: Colors.pinkAccent),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your last name';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _emailController,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "Email",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.email,
+                                      color: Colors.greenAccent),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                                    return 'Please enter a valid email';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _passwordController,
+                                style: const TextStyle(color: Colors.white),
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "Password",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  prefixIcon:
+                                      const Icon(Icons.lock, color: Colors.pinkAccent),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your password';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              TextFormField(
+                                controller: _confirmPasswordController,
+                                style: const TextStyle(color: Colors.white),
+                                obscureText: true,
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "Confirm Password",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  prefixIcon:
+                                      const Icon(Icons.lock, color: Colors.pinkAccent),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please confirm your password';
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 16),
+                              DropdownButtonFormField<String>(
+                                initialValue: _role,
+                                dropdownColor: Colors.black87,
+                                style: const TextStyle(color: Colors.white),
+                                decoration: InputDecoration(
+                                  filled: true,
+                                  fillColor: Colors.black54,
+                                  labelText: "Select Role",
+                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: "student",
+                                    child: Text("Student"),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: "teacher",
+                                    child: Text("Teacher"),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    setState(() => _role = value);
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 24),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    backgroundColor: Colors.greenAccent,
+                                    foregroundColor: Colors.black,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: _isLoading ? null : _signup,
+                                  child: _isLoading
+                                      ? const CircularProgressIndicator(color: Colors.black)
+                                      : const Text(
+                                          "SIGN UP",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            letterSpacing: 2,
+                                          ),
+                                        ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    side: const BorderSide(
+                                        color: Colors.greenAccent, width: 2),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  onPressed: () => Navigator.pop(context),
+                                  icon: const Icon(Icons.arrow_back,
+                                      color: Colors.greenAccent),
+                                  label: const Text(
+                                    "BACK",
+                                    style: TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontSize: 14,
+                                      fontFamily: "PressStart2P",
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 30),
-                        TextFormField(
-                          controller: _firstNameController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "First Name",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon:
-                                const Icon(Icons.person, color: Colors.greenAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your first name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _lastNameController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "Last Name",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.person_outline,
-                                color: Colors.pinkAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your last name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _emailController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "Email",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon: const Icon(Icons.email,
-                                color: Colors.greenAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your email';
-                            }
-                            if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
-                              return 'Please enter a valid email';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          style: const TextStyle(color: Colors.white),
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "Password",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon:
-                                const Icon(Icons.lock, color: Colors.pinkAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your password';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          style: const TextStyle(color: Colors.white),
-                          obscureText: true,
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "Confirm Password",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            prefixIcon:
-                                const Icon(Icons.lock, color: Colors.pinkAccent),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please confirm your password';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          initialValue: _role,
-                          dropdownColor: Colors.black87,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            filled: true,
-                            fillColor: Colors.black54,
-                            labelText: "Select Role",
-                            labelStyle: const TextStyle(color: Colors.white70),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          items: const [
-                            DropdownMenuItem(
-                              value: "student",
-                              child: Text("Student"),
-                            ),
-                            DropdownMenuItem(
-                              value: "teacher",
-                              child: Text("Teacher"),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() => _role = value);
-                            }
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              backgroundColor: Colors.greenAccent,
-                              foregroundColor: Colors.black,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: _isLoading ? null : _signup,
-                            child: _isLoading
-                                ? const CircularProgressIndicator(color: Colors.black)
-                                : const Text(
-                                    "SIGN UP",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              side: const BorderSide(
-                                  color: Colors.greenAccent, width: 2),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            onPressed: () => Navigator.pop(context),
-                            icon: const Icon(Icons.arrow_back,
-                                color: Colors.greenAccent),
-                            label: const Text(
-                              "BACK",
-                              style: TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 14,
-                                fontFamily: "PressStart2P",
-                                letterSpacing: 2,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],

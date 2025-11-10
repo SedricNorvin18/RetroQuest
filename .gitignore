@@ -1,3 +1,4 @@
+
 # Miscellaneous
 *.class
 *.log
@@ -9,67 +10,31 @@
 .history
 .svn/
 
-# Flutter specific
+# Flutter/Dart
+/build/
+.dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
 .packages
 .pub-cache/
 .pub/
-/build/
-
-# IntelliJ
-.idea/
-*.iml
-*.ipr
-*.iws
-
-# Visual Studio Code
-.vscode/
-
-# Android
-/android/gradle/
-/android/gradlew
-/android/gradlew.bat
-/android/local.properties
-/android/key.properties
-/android/.gradle/
-/android/app/src/main/assets/flutter_assets/
-/android/app/build/
-/android/app/intermediates/
-/android/app/outputs/
-
-# iOS
+/ios/.symlinks/
 /ios/Flutter/App.framework
 /ios/Flutter/Flutter.framework
-/ios/Flutter/engine
-/ios/Flutter/flutter_assets
-/ios/Flutter/gen_inputs_and_outputs.json
 /ios/Flutter/Generated.xcconfig
-/ios/Flutter/app.flx
-/ios/Flutter/snapshot_blob.bin
-/ios/Flutter/vm_snapshot_data
-/ios/Flutter/isolate_snapshot_data
-/ios/Flutter/vm_snapshot_instr
-/ios/Flutter/isolate_snapshot_instr
-/ios/Pods/
+/ios/Flutter/flutter_export_environment.sh
 /ios/Runner/GeneratedPluginRegistrant.h
 /ios/Runner/GeneratedPluginRegistrant.m
-/ios/Runner/Runner-Bridging-Header.h
-/ios/Runner/Runner.xcworkspace/contents.xcworkspacedata
-/ios/Runner.xcodeproj/project.xcworkspace/
-/ios/Runner.xcodeproj/xcuserdata/
-/ios/ServiceDefinitions.json
-
-# macOS
-/macos/Flutter/ephemeral
-/macos/Pods/
-/macos/Runner.xcworkspace/contents.xcworkspacedata
-/macos/Runner.xcodeproj/project.xcworkspace/
-/macos/Runner.xcodeproj/xcuserdata/
-
-# Linux
-/linux/flutter/ephemeral
-/linux/CMakeLists.txt.user
-
-# Windows
-/windows/flutter/ephemeral
+/ios/Runner.xcworkspace/xcshareddata/
+/android/key.properties
+/android/.gradle
+/android/app/src/main/assets/flutter_assets/
+/android/app/build/
+/android/build/
+/android/app/google-services.json
+/android/local.properties
+/functions/node_modules/
+/functions/lib/
+/web/
+# Rider
+.idea/

@@ -1,4 +1,4 @@
-// @dart=3.0
+// @dart=3.1
 // Flutter web bootstrap script for package:retroquest/main.dart.
 //
 // Generated file. Do not edit.

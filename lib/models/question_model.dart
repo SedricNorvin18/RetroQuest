@@ -8,6 +8,7 @@ class Question {
   final String? imageUrl;
   final String? fileUrl;
   final String? createdBy;
+  final int? timeLimit;
 
   Question({
     required this.id,
@@ -17,6 +18,7 @@ class Question {
     this.imageUrl,
     this.fileUrl,
     this.createdBy,
+    this.timeLimit,
   });
 
   factory Question.fromFirestore(DocumentSnapshot doc) {
@@ -29,6 +31,7 @@ class Question {
       imageUrl: data['imageUrl'],
       fileUrl: data['fileUrl'],
       createdBy: data['createdBy'],
+      timeLimit: data['timeLimit'],
     );
   }
 
@@ -41,6 +44,7 @@ class Question {
       'fileUrl': fileUrl,
       'createdBy': createdBy,
       'createdAt': FieldValue.serverTimestamp(),
+      'timeLimit': timeLimit,
     };
   }
 }
