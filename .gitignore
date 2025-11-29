@@ -1,40 +1,6 @@
-
-# Miscellaneous
-*.class
-*.log
-*.pyc
-*.swp
-.DS_Store
-.atom/
-.buildlog/
-.history
-.svn/
-
-# Flutter/Dart
-/build/
 .dart_tool/
-.flutter-plugins
 .flutter-plugins-dependencies
-.packages
-.pub-cache/
-.pub/
-/ios/.symlinks/
-/ios/Flutter/App.framework
-/ios/Flutter/Flutter.framework
-/ios/Flutter/Generated.xcconfig
-/ios/Flutter/flutter_export_environment.sh
-/ios/Runner/GeneratedPluginRegistrant.h
-/ios/Runner/GeneratedPluginRegistrant.m
-/ios/Runner.xcworkspace/xcshareddata/
-/android/key.properties
-/android/.gradle
-/android/app/src/main/assets/flutter_assets/
-/android/app/build/
-/android/build/
-/android/app/google-services.json
-/android/local.properties
-/functions/node_modules/
-/functions/lib/
-/web/
-# Rider
 .idea/
+build/
+firestore-debug.log
+functions/serviceAccountKey.json
