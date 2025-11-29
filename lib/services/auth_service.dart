@@ -2,11 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: kIsWeb 
+      ? null 
+      : '694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com',
+  );
 
   Future<void> _saveGoogleUser(User user) async {
     final prefs = await SharedPreferences.getInstance();
@@ -54,7 +60,7 @@ class AuthService {
     final user = userCredential.user;
     if (user != null) {
       await user.updateDisplayName(name);
-      await user.reload(); // Reload user to get the updated details
+      await user.reload(); 
 
       final nameParts = name.split(' ');
       final firstName = nameParts.isNotEmpty ? nameParts.first : '';
@@ -79,7 +85,56 @@ class AuthService {
       _auth.signInWithEmailAndPassword(email: email, password: password);
 
   Future<User?> signInWithGoogle({bool forceSelectAccount = false}) async {
+    if (kIsWeb) {
+      return _signInWithGoogleForWeb(forceSelectAccount: forceSelectAccount);
+    } else {
+      return _signInWithGoogleForMobile(forceSelectAccount: forceSelectAccount);
+    }
+  }
+
+  Future<User?> _signInWithGoogleForMobile({bool forceSelectAccount = false}) async {
     try {
+      if (forceSelectAccount) {
+        await _googleSignIn.signOut();
+      }
+
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) {
+        return null;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      final OAuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final user = userCredential.user;
+
+      if (user != null) {
+        await _handlePostSignInUser(user);
+      }
+      
+      return user;
+
+    } on FirebaseAuthException catch (e) {
+       if (e.code == 'account-exists-with-different-credential') {
+        throw Exception(
+            'An account already exists with this email. Please sign in with your original method.');
+      }
+      throw Exception(
+          'A Firebase authentication error occurred. Please try again.');
+    } catch (e) {
+      throw Exception(
+          'An unexpected error occurred during Google Sign-In. Please try again.');
+    }
+  }
+
+  Future<User?> _signInWithGoogleForWeb({bool forceSelectAccount = false}) async {
+     try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
 
       if (forceSelectAccount) {
@@ -91,35 +146,7 @@ class AuthService {
       final user = userCredential.user;
 
       if (user != null) {
-        await _saveGoogleUser(user);
-
-        final userDocRef = _firestore.collection('users').doc(user.uid);
-        final doc = await userDocRef.get();
-
-        final name = user.displayName ?? '';
-        final nameParts = name.split(' ');
-        final firstName = nameParts.isNotEmpty ? nameParts.first : '';
-        final lastName =
-            nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
-
-        if (!doc.exists) {
-          await userDocRef.set({
-            'uid': user.uid,
-            'email': user.email,
-            'displayName': name,
-            'first': firstName,
-            'last': lastName,
-            'photoURL': user.photoURL,
-            'createdAt': FieldValue.serverTimestamp(),
-          }, SetOptions(merge: true));
-        } else {
-          await userDocRef.update({
-            'displayName': name,
-            'first': firstName,
-            'last': lastName,
-            'photoURL': user.photoURL,
-          });
-        }
+        await _handlePostSignInUser(user);
       }
 
       return user;
@@ -138,9 +165,41 @@ class AuthService {
     }
   }
 
+  Future<void> _handlePostSignInUser(User user) async {
+    await _saveGoogleUser(user);
+    
+    final userDocRef = _firestore.collection('users').doc(user.uid);
+    final doc = await userDocRef.get();
+
+    final name = user.displayName ?? '';
+    final nameParts = name.split(' ');
+    final firstName = nameParts.isNotEmpty ? nameParts.first : '';
+    final lastName =
+        nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+    if (!doc.exists) {
+      await userDocRef.set({
+        'uid': user.uid,
+        'email': user.email,
+        'displayName': name,
+        'first': firstName,
+        'last': lastName,
+        'photoURL': user.photoURL,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } else {
+      await userDocRef.update({
+        'displayName': name,
+        'first': firstName,
+        'last': lastName,
+        'photoURL': user.photoURL,
+      });
+    }
+  }
+
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
     await _auth.signOut();
+    await clearGoogleUser();
   }
 
   User? get currentUser => _auth.currentUser;

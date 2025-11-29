@@ -7,42 +7,6 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:694711600391:android:3e288d8a349fb501b6b1a2",
-        "android_client_info": {
-          "package_name": "com.example.retro_quest"
-        }
-      },
-      "oauth_client": [
-        {
-          "client_id": "694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDF63SPQsVDzs7IJLSGb2bI3NmKEcOKrcI"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "694711600391-km7hbm9nr1dc6qcbe9vbdj6ml9n97qf2.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.retroquest"
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
         "mobilesdk_app_id": "1:694711600391:android:f625df3c7b427d52b6b1a2",
         "android_client_info": {
           "package_name": "com.example.retroquest"
@@ -50,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "694711600391-qn5f5r9kuhdbv4d5v6tqovknj27vue83.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.retroquest",
+            "certificate_hash": "3ef48c017402e9d2050ed12694ace9a1363646b7"
+          }
+        },
+        {
           "client_id": "694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -67,10 +39,10 @@
               "client_type": 3
             },
             {
-              "client_id": "694711600391-km7hbm9nr1dc6qcbe9vbdj6ml9n97qf2.apps.googleusercontent.com",
+              "client_id": "694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "com.example.retroquest"
+                "bundle_id": "com.example.tempProject"
               }
             }
           ]

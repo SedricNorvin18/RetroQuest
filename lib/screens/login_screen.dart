@@ -67,7 +67,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithGoogle(forceSelectAccount: forceSelectAccount);
+      await _authService.signInWithGoogle(
+          forceSelectAccount: forceSelectAccount);
       // If successful, AuthGate handles navigation.
       // If cancelled, the awaited function returns null and we proceed to finally.
     } catch (e) {
@@ -159,8 +160,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Email",
-                                  labelStyle: const TextStyle(color: Colors.white70),
-                                  prefixIcon: const Icon(Icons.email, color: Colors.greenAccent),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.email,
+                                      color: Colors.greenAccent),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -169,7 +172,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your email';
                                   }
-                                  if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                                  if (!RegExp(
+                                          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                                      .hasMatch(value)) {
                                     return 'Please enter a valid email';
                                   }
                                   return null;
@@ -184,8 +189,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Password",
-                                  labelStyle: const TextStyle(color: Colors.white70),
-                                  prefixIcon: const Icon(Icons.lock, color: Colors.pinkAccent),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.lock,
+                                      color: Colors.pinkAccent),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -202,7 +209,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: Colors.greenAccent,
                                     foregroundColor: Colors.black,
                                     shape: RoundedRectangleBorder(
@@ -212,9 +220,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                   onPressed: _isLoading ? null : _login,
                                   child: _isLoading
                                       ? const SizedBox(
-                                    width: 24, height: 24, 
-                                    child: CircularProgressIndicator(color: Colors.black, strokeWidth: 3,)
-                                  )
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.black,
+                                            strokeWidth: 3,
+                                          ))
                                       : const Text(
                                           "ENTER QUEST",
                                           style: TextStyle(
@@ -228,29 +239,34 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 20),
                               const Text(
                                 "OR CONTINUE WITH",
-                                style: TextStyle(color: Colors.white70, fontSize: 12),
+                                style: TextStyle(
+                                    color: Colors.white70, fontSize: 12),
                               ),
                               const SizedBox(height: 10),
                               if (_lastGoogleUser != null)
                                 GestureDetector(
                                   onTap: () => _signInWithGoogle(),
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8, horizontal: 12),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
                                       children: [
-                                        if (_lastGoogleUser!['photoUrl']!.isNotEmpty)
+                                        if (_lastGoogleUser!['photoUrl']!
+                                            .isNotEmpty)
                                           CircleAvatar(
-                                            backgroundImage: NetworkImage(_lastGoogleUser!['photoUrl']!),
+                                            backgroundImage: NetworkImage(
+                                                _lastGoogleUser!['photoUrl']!),
                                             radius: 16,
                                           ),
                                         const SizedBox(width: 10),
                                         Expanded(
                                           child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 "Continue as ${_lastGoogleUser!['name']}",
@@ -262,14 +278,17 @@ class _LoginScreenState extends State<LoginScreen> {
                                               ),
                                               Text(
                                                 _lastGoogleUser!['email']!,
-                                                style: const TextStyle(color: Colors.black54, fontSize: 12),
+                                                style: const TextStyle(
+                                                    color: Colors.black54,
+                                                    fontSize: 12),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ],
                                           ),
                                         ),
                                         const SizedBox(width: 10),
-                                        const Icon(Icons.login, color: Colors.blueAccent),
+                                        const Icon(Icons.login,
+                                            color: Colors.blueAccent),
                                       ],
                                     ),
                                   ),
@@ -279,20 +298,27 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton.icon(
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: Colors.blueAccent,
                                     foregroundColor: Colors.white,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
-                                  onPressed: _isLoading ? null : () => _signInWithGoogle(forceSelectAccount: true),
+                                  onPressed: _isLoading
+                                      ? null
+                                      : () => _signInWithGoogle(
+                                          forceSelectAccount: true),
                                   icon: const Icon(Icons.login),
-                                   label: _isLoading
+                                  label: _isLoading
                                       ? const SizedBox(
-                                    width: 24, height: 24, 
-                                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3,)
-                                  )
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            color: Colors.white,
+                                            strokeWidth: 3,
+                                          ))
                                       : Text(_lastGoogleUser != null
                                           ? "Sign in with a different Google account"
                                           : "Sign in with Google"),
@@ -306,7 +332,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                         if (mounted) {
                                           Navigator.push(
                                             context,
-                                            MaterialPageRoute(builder: (_) => const SignupScreen()),
+                                            MaterialPageRoute(
+                                                builder: (_) =>
+                                                    const SignupScreen()),
                                           );
                                         }
                                       },

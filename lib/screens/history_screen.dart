@@ -531,9 +531,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final subjectAttempts = visibleGroupedAttempts[subject]!;
 
         return Padding(
+          
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: Card(
-            color: const Color(0xFF2A314D),
+            color: const Color.fromARGB(138, 0, 0, 0),
             elevation: 4,
             shape:
                 RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

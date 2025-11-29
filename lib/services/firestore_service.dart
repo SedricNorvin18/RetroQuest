@@ -28,11 +28,13 @@ class FirestoreService {
     return _db.collection('subjects').doc(subjectId).collection('questions');
   }
 
-  Future<DocumentReference<Map<String, dynamic>>> addQuestion(String subjectId, Map<String, dynamic> data) {
+  Future<DocumentReference<Map<String, dynamic>>> addQuestion(
+      String subjectId, Map<String, dynamic> data) {
     return subjectQuestions(subjectId).add(data);
   }
 
-  Future<void> updateQuestion(String subjectId, String questionId, Map<String, dynamic> data) {
+  Future<void> updateQuestion(
+      String subjectId, String questionId, Map<String, dynamic> data) {
     return subjectQuestions(subjectId).doc(questionId).update(data);
   }
 
@@ -40,8 +42,10 @@ class FirestoreService {
     return subjectQuestions(subjectId).doc(questionId).delete();
   }
 
-  Stream<QuerySnapshot<Map<String, dynamic>>> streamQuestions(String subjectId) {
-    return subjectQuestions(subjectId).orderBy('createdAt', descending: true).snapshots();
+  Stream<QuerySnapshot<Map<String, dynamic>>> streamQuestions(
+      String subjectId) {
+    return subjectQuestions(subjectId)
+        .orderBy('createdAt', descending: true)
+        .snapshots();
   }
 }
-  

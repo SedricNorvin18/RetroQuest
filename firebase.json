@@ -25,7 +25,7 @@
       "android": {
         "default": {
           "projectId": "retroquest-11331898-85115",
-          "appId": "1:694711600391:android:3e288d8a349fb501b6b1a2",
+          "appId": "1:694711600391:android:f625df3c7b427d52b6b1a2",
           "fileOutput": "android/app/google-services.json"
         }
       },
@@ -33,7 +33,7 @@
         "lib/firebase_options.dart": {
           "projectId": "retroquest-11331898-85115",
           "configurations": {
-            "android": "1:694711600391:android:3e288d8a349fb501b6b1a2",
+            "android": "1:694711600391:android:f625df3c7b427d52b6b1a2",
             "ios": "1:694711600391:ios:762b1b02dd29e02bb6b1a2",
             "macos": "1:694711600391:ios:762b1b02dd29e02bb6b1a2",
             "web": "1:694711600391:web:2b2df1fbdff0d3fbb6b1a2",

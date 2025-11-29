@@ -563,8 +563,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        _buildUpgradeButton(),
+        
+        
         const SizedBox(height: 24),
         _buildNavSectionTitle('MANAGE'),
         _buildNavItem(Icons.add, 'New quiz',
@@ -825,7 +825,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       width: MediaQuery.of(context).size.width * 0.6, // 60% of screen width
       padding: const EdgeInsets.all(32.0),
       decoration: BoxDecoration(
-        color: Colors.black87,
+        color: const Color.fromARGB(200, 0, 0, 0),
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -1009,19 +1009,6 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     },
   );
 }
-
-
-  Widget _buildUpgradeButton() {
-    return TextButton.icon(
-      onPressed: () {},
-      icon: const Icon(Icons.upgrade, color: Colors.greenAccent),
-      label: const Text('Upgrade',
-          style: TextStyle(
-              color: Colors.greenAccent,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'PressStart2P')),
-    );
-  }
 
   Widget _buildNavSectionTitle(String title) {
     return Padding(
