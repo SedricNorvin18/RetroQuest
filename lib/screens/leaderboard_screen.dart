@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/leaderboard_entry_model.dart';
 
@@ -15,6 +15,47 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   String? _selectedTeacherId;
   String? _selectedTeacherName;
   String? _selectedSubjectId;
+  List<String> _enrolledTeacherIds = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _getEnrolledTeachers();
+  }
+
+  Future<void> _getEnrolledTeachers() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('enrolledStudents')
+          .where('studentUid', isEqualTo: user.uid)
+          .get();
+
+      if (snapshot.docs.isNotEmpty) {
+        final teacherIds =
+            snapshot.docs.map((doc) => doc['teacherUid'] as String).toList();
+        if (mounted) {
+          setState(() {
+            _enrolledTeacherIds = teacherIds;
+            _isLoading = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +66,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           _selectedSubjectId != null
               ? '$_selectedSubjectId Leaderboard'
               : _selectedTeacherId != null
-                  ? '${_selectedTeacherName ?? 'Teacher'}'' Subjects'
+                  ? '${_selectedTeacherName ?? 'Teacher'}' ' Subjects'
                   : 'Select a Teacher',
           style: const TextStyle(
               fontFamily: 'PressStart2P', color: Colors.white, fontSize: 16),
@@ -61,17 +102,39 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
   }
 
   Widget _buildTeacherView() {
+    if (_isLoading) {
+      return const Center(
+          child: CircularProgressIndicator(color: Colors.white));
+    }
+
+    if (_enrolledTeacherIds.isEmpty) {
+      return const Center(
+        child: Text(
+          'Not enrolled with any teacher.',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            fontFamily: 'PressStart2P',
+            color: Colors.white,
+            fontSize: 16,
+          ),
+        ),
+      );
+    }
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('users')
-          .where('role', isEqualTo: 'teacher')
+          .where(FieldPath.documentId, whereIn: _enrolledTeacherIds)
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.white));
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.white)));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
@@ -117,10 +180,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.white));
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.white)));
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
@@ -189,8 +255,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       }
     }
 
-    final List<LeaderboardEntry> leaderboardEntries = highestScoresPerStudent.values.toList();
-    leaderboardEntries.sort((a, b) => b.score.compareTo(a.score)); // Sort by score descending
+    final List<LeaderboardEntry> leaderboardEntries =
+        highestScoresPerStudent.values.toList();
+    leaderboardEntries
+        .sort((a, b) => b.score.compareTo(a.score)); // Sort by score descending
 
     return leaderboardEntries;
   }
@@ -200,10 +268,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
       future: _getHighestScoresForSubject(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.white));
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.white));
         }
         if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}', style: const TextStyle(color: Colors.white)));
+          return Center(
+              child: Text('Error: ${snapshot.error}',
+                  style: const TextStyle(color: Colors.white)));
         }
         if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return const Center(
@@ -239,11 +310,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
         : 'N/A';
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // Adjusted vertical margin
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Adjusted vertical padding
+      margin: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 6), // Adjusted vertical margin
+      padding: const EdgeInsets.symmetric(
+          horizontal: 16, vertical: 12), // Adjusted vertical padding
       decoration: BoxDecoration(
-        color: Colors.black.withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
-        borderRadius: BorderRadius.circular(8), // Slightly smaller border radius
+        color: Colors.black
+            .withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
+        borderRadius:
+            BorderRadius.circular(8), // Slightly smaller border radius
         border: Border.all(color: Colors.cyanAccent, width: 1),
         boxShadow: const [
           BoxShadow(
@@ -311,11 +386,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6), // Adjusted vertical margin
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Adjusted vertical padding
+        margin: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 6), // Adjusted vertical margin
+        padding: const EdgeInsets.symmetric(
+            horizontal: 16, vertical: 12), // Adjusted vertical padding
         decoration: BoxDecoration(
-          color: Colors.black.withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
-          borderRadius: BorderRadius.circular(8), // Slightly smaller border radius
+          color: Colors.black
+              .withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
+          borderRadius:
+              BorderRadius.circular(8), // Slightly smaller border radius
           border: Border.all(color: Colors.purpleAccent, width: 1),
           boxShadow: const [
             BoxShadow(

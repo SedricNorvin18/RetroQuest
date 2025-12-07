@@ -17,7 +17,8 @@ class QuizResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double percentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) : 0;
+    double percentage =
+        totalQuestions > 0 ? (correctAnswers / totalQuestions) : 0;
 
     return Scaffold(
       body: Stack(
@@ -137,8 +138,10 @@ class QuizResultScreen extends StatelessWidget {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.greenAccent,
                                 foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 textStyle: const TextStyle(
                                   fontSize: 14,
                                   fontFamily: 'PressStart2P',
@@ -148,12 +151,15 @@ class QuizResultScreen extends StatelessWidget {
                               child: const Text('Play Again'),
                             ),
                             ElevatedButton(
-                              onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+                              onPressed: () => Navigator.popUntil(
+                                  context, (route) => route.isFirst),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.pinkAccent,
                                 foregroundColor: Colors.white,
-                                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 textStyle: const TextStyle(
                                   fontSize: 14,
                                   fontFamily: 'PressStart2P',
@@ -187,7 +193,7 @@ class QuizResultScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black54,
         borderRadius: BorderRadius.circular(12),
-         border: Border.all(color: Colors.white24, width: 1),
+        border: Border.all(color: Colors.white24, width: 1),
       ),
       child: Row(
         children: [
@@ -198,7 +204,7 @@ class QuizResultScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               color: Colors.white,
-               fontFamily: 'PressStart2P',
+              fontFamily: 'PressStart2P',
             ),
           ),
           const Spacer(),

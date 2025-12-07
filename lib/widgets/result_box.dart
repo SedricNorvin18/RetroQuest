@@ -26,8 +26,8 @@ class _ResultBoxState extends State<ResultBox>
   @override
   void initState() {
     super.initState();
-    _controller =
-        AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
     _medalBounce = Tween<double>(begin: 0, end: -12)
         .chain(CurveTween(curve: Curves.elasticOut))
         .animate(_controller);

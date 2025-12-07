@@ -1,4 +1,6 @@
+
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:retroquest/screens/signup_screen.dart';
 import 'package:retroquest/services/auth_service.dart';
 
@@ -13,6 +15,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _resetEmailController = TextEditingController();
   final _authService = AuthService();
 
   bool _isLoading = false;
@@ -37,6 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _resetEmailController.dispose();
     super.dispose();
   }
 
@@ -48,7 +52,6 @@ class _LoginScreenState extends State<LoginScreen> {
         _emailController.text.trim(),
         _passwordController.text.trim(),
       );
-      // AuthGate will handle all navigation
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,17 +63,13 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
       }
     }
-    // No need to set isLoading to false here if successful, because the widget will be unmounted.
   }
 
   Future<void> _signInWithGoogle({bool forceSelectAccount = false}) async {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithGoogle(
-          forceSelectAccount: forceSelectAccount);
-      // If successful, AuthGate handles navigation.
-      // If cancelled, the awaited function returns null and we proceed to finally.
+      await _authService.signInWithGoogle(forceSelectAccount: forceSelectAccount);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -81,14 +80,107 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } finally {
-      // This will run for cancellation or error, but is safe on success because
-      // the mounted check will fail if the widget has been replaced by AuthGate.
       if (mounted) {
         setState(() => _isLoading = false);
         _loadLastGoogleUser();
       }
     }
   }
+
+  Future<void> _forgotPassword() async {
+  if (!mounted) return;
+
+  _resetEmailController.text = _emailController.text.trim();
+  final resetFormKey = GlobalKey<FormState>();
+
+  await showDialog(
+    context: context,
+    builder: (dialogContext) {   // <-- important: use dialogContext for the dialog only
+      return AlertDialog(
+        title: const Text('Password Reset'),
+        content: Form(
+          key: resetFormKey,
+          child: TextFormField(
+            controller: _resetEmailController,
+            decoration: const InputDecoration(
+              labelText: 'Enter your email',
+              prefixIcon: Icon(Icons.email),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'Email is required';
+              }
+              if (!RegExp(
+                  r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                  .hasMatch(value)) {
+                return 'Enter a valid email';
+              }
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // <-- use dialogContext here
+            },
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (resetFormKey.currentState!.validate()) {
+                Navigator.of(dialogContext).pop(); // <-- consistent
+                if (!mounted) return;
+
+                setState(() => _isLoading = true);
+
+                try {
+                  await _authService.sendPasswordResetEmail(
+                    _resetEmailController.text.trim(),
+                  );
+
+                  if (!mounted) return; // <-- safe to use widget context now
+
+                  await showDialog(
+                    context: context,   // <-- widget context (safe because mounted)
+                    builder: (context) => AlertDialog(
+                      title: const Text("Email Sent"),
+                      content: const Text(
+                        "A password reset link has been sent to your email address.",
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text("OK"),
+                        ),
+                      ],
+                    ),
+                  );
+                } catch (e) {
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          "Failed to send reset email: ${e.toString()}",
+                        ),
+                        backgroundColor: Colors.redAccent,
+                      ),
+                    );
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() => _isLoading = false);
+                  }
+                }
+              }
+            },
+            child: const Text('Send Reset Email'),
+          ),
+        ],
+      );
+    },
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +328,24 @@ class _LoginScreenState extends State<LoginScreen> {
                                         ),
                                 ),
                               ),
-                              const SizedBox(height: 20),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Center(
+                                  child: TextButton(
+                                    onPressed: _isLoading ? null : _forgotPassword,
+                                    style: TextButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      minimumSize: const Size(0, 0),
+                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                    ),
+                                    child: const Text(
+                                      "Forgot Password?",
+                                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               const Text(
                                 "OR CONTINUE WITH",
                                 style: TextStyle(
@@ -254,6 +363,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
+                                      crossAxisAlignment: CrossAxisAlignment.center,
                                       children: [
                                         if (_lastGoogleUser!['photoUrl']!
                                             .isNotEmpty)
@@ -287,8 +397,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                         ),
                                         const SizedBox(width: 10),
-                                        const Icon(Icons.login,
-                                            color: Colors.blueAccent),
+                                        SvgPicture.asset(
+                                          'assets/images/google_logo.svg',
+                                          height: 22,
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -296,32 +408,52 @@ class _LoginScreenState extends State<LoginScreen> {
                               const SizedBox(height: 10),
                               SizedBox(
                                 width: double.infinity,
-                                child: ElevatedButton.icon(
+                                child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 16),
-                                    backgroundColor: Colors.blueAccent,
-                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black87,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
                                   onPressed: _isLoading
                                       ? null
-                                      : () => _signInWithGoogle(
-                                          forceSelectAccount: true),
-                                  icon: const Icon(Icons.login),
-                                  label: _isLoading
+                                      : () => _signInWithGoogle(forceSelectAccount: true),
+                                  child: _isLoading
                                       ? const SizedBox(
                                           width: 24,
                                           height: 24,
                                           child: CircularProgressIndicator(
-                                            color: Colors.white,
+                                            color: Colors.blueAccent,
                                             strokeWidth: 3,
                                           ))
-                                      : Text(_lastGoogleUser != null
-                                          ? "Sign in with a different Google account"
-                                          : "Sign in with Google"),
+                                      : Center(
+                                          child: Row(
+                                            // No MainAxisAlignment.center here
+                                            mainAxisSize: MainAxisSize.min, // Keep this for minimal width
+                                            children: [
+                                              // Use a SizedBox to push content to the right
+                                              const SizedBox(width: 16), // Adjust this value to shift the logo right
+                                              SvgPicture.asset(
+                                                'assets/images/google_logo.svg',
+                                                height: 24,
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: Text(
+                                                  _lastGoogleUser != null
+                                                      ? "Sign in with a different Google account"
+                                                      : "Sign in with Google",
+                                                  textAlign: TextAlign.center,
+                                                  style: const TextStyle(
+                                                      fontSize: 16, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                               const SizedBox(width: 16), // Balance the initial SizedBox
+                                            ],
+                                          ),
+                                        ),
                                 ),
                               ),
                               const SizedBox(height: 12),

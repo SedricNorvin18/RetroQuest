@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:retroquest/screens/auth_gate.dart';
@@ -13,6 +12,8 @@ class InitialGate extends StatefulWidget {
 
 class _InitialGateState extends State<InitialGate> {
   Future<bool> _checkFirstLaunch() async {
+    // Add a short delay to allow deep link processing
+    await Future.delayed(const Duration(milliseconds: 100));
     final prefs = await SharedPreferences.getInstance();
     // Returns true if it's the first launch, otherwise false.
     return prefs.getBool('isFirstLaunch') ?? true;

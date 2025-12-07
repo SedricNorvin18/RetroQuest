@@ -69,7 +69,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
-   Query<QuizAttempt> _getAttemptsQuery() {
+  Query<QuizAttempt> _getAttemptsQuery() {
     if (_userRole == 'teacher') {
       return FirebaseFirestore.instance
           .collection('quiz_attempts')
@@ -242,14 +242,15 @@ class _HistoryScreenState extends State<HistoryScreen> {
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Delete Attempt'),
-          content: const Text(
-              'Are you sure you want to delete this quiz attempt?'),
+          content:
+              const Text('Are you sure you want to delete this quiz attempt?'),
           actions: <Widget>[
             TextButton(
                 child: const Text('Cancel'),
                 onPressed: () => Navigator.of(context).pop(false)),
             TextButton(
-                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                child:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
                 onPressed: () => Navigator.of(context).pop(true)),
           ],
         );
@@ -263,7 +264,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
 
     try {
-      final docRef = FirebaseFirestore.instance.collection('quiz_attempts').doc(attemptId);
+      final docRef =
+          FirebaseFirestore.instance.collection('quiz_attempts').doc(attemptId);
       if (isTeacher) {
         await docRef.update({'hiddenFromTeacher': true});
       } else {
@@ -309,7 +311,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: const Text('Cancel'),
                 onPressed: () => Navigator.of(context).pop(false)),
             TextButton(
-                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                child:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
                 onPressed: () => Navigator.of(context).pop(true)),
           ],
         );
@@ -339,8 +342,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(
-                  '${_selectedAttempts.length} attempts deleted.')),
+              content: Text('${_selectedAttempts.length} attempts deleted.')),
         );
       }
     } catch (e) {
@@ -380,7 +382,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 child: const Text('Cancel'),
                 onPressed: () => Navigator.of(context).pop(false)),
             TextButton(
-                child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                child:
+                    const Text('Delete', style: TextStyle(color: Colors.red)),
                 onPressed: () => Navigator.of(context).pop(true)),
           ],
         );
@@ -460,9 +463,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
               actions: [
                 IconButton(
-                  icon: Icon(isAllVisibleSelected
-                      ? Icons.done_all
-                      : Icons.select_all),
+                  icon: Icon(
+                      isAllVisibleSelected ? Icons.done_all : Icons.select_all),
                   onPressed: _toggleSelectAll,
                   tooltip: isAllVisibleSelected
                       ? 'Deselect All'
@@ -485,7 +487,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
               actions: [
                 if (visibleGroupedAttempts.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.select_all, color: Color(0xFF2ECC71)),
+                    icon:
+                        const Icon(Icons.select_all, color: Color(0xFF2ECC71)),
                     onPressed: _enterSelectionAndSelectAll,
                     tooltip: 'Select All Visible',
                   ),
@@ -501,8 +504,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  Widget _buildBody(
-      Map<String, List<QuizAttempt>> visibleGroupedAttempts) {
+  Widget _buildBody(Map<String, List<QuizAttempt>> visibleGroupedAttempts) {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -531,7 +533,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
         final subjectAttempts = visibleGroupedAttempts[subject]!;
 
         return Padding(
-          
           padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
           child: Card(
             color: const Color.fromARGB(138, 0, 0, 0),
@@ -582,7 +583,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   title: Text(
                       isTeacher
                           ? attempt.studentName
-                          : _teacherNames[attempt.teacherId] ?? 'Unknown Teacher',
+                          : _teacherNames[attempt.teacherId] ??
+                              'Unknown Teacher',
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.white)),
                   subtitle: Text(
@@ -591,8 +593,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ),
                   trailing: !_isSelectionMode
                       ? IconButton(
-                          icon:
-                              const Icon(Icons.delete, color: Colors.red),
+                          icon: const Icon(Icons.delete, color: Colors.red),
                           onPressed: () => _deleteAttempt(attempt.id),
                           tooltip: 'Delete Attempt',
                         )

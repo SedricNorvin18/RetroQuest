@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:retroquest/screens/account_settings_screen.dart';
 import 'package:retroquest/screens/history_screen.dart';
 import 'package:retroquest/screens/leaderboard_screen.dart';
+import 'package:retroquest/screens/profile_screen.dart';
 import 'package:retroquest/screens/quiz_screen.dart';
 import 'package:retroquest/screens/teacher_subjects_screen.dart';
+import 'package:retroquest/services/firestore_service.dart'; 
+import 'package:retroquest/models/enrolled_student.dart'; 
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -22,6 +26,28 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   Future<void> _logout() async {
     await FirebaseAuth.instance.signOut();
     // AuthGate will handle navigation
+  }
+
+  Future<String> _getTeacherDisplayName(String teacherUid) async {
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(teacherUid)
+          .get();
+      if (doc.exists) {
+        final data = doc.data();
+        return _getTeacherName(data);
+      }
+      return 'Unknown Teacher (UID: $teacherUid)';
+    } catch (e) {
+      return 'Error fetching teacher name';
+    }
+  }
+
+  void _showEnrollmentsView() {
+    setState(() {
+      _currentView = 'enrollments';
+    });
   }
 
   void _showBrowseView() {
@@ -165,33 +191,48 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: _user?.photoURL != null
-                  ? NetworkImage(_user!.photoURL!)
-                  : null,
-              child: _user?.photoURL == null
-                  ? const Icon(Icons.person, size: 20, color: Colors.white)
-                  : null,
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'account') {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const AccountSettingsScreen()));
+            } else if (value == 'profile') {
+              Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()));
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'account',
+              child: Text('Account'),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(_user?.uid).get(),
-                builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-                  // if (snapshot.connectionState == ConnectionState.waiting) {
-                  //    return const Text(
-                  //       'Loading...',
-                  //       style: TextStyle(
-                  //           fontWeight: FontWeight.bold,
-                  //           fontSize: 16,
-                  //           color: Colors.white),
-                  //       overflow: TextOverflow.ellipsis,
-                  //     );
-                  // }
-                  if (snapshot.hasError || !snapshot.hasData || snapshot.data?.data() == null) {
+            const PopupMenuItem<String>(
+              value: 'profile',
+              child: Text('View profile'),
+            ),
+          ],
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: _user?.photoURL != null
+                    ? NetworkImage(_user!.photoURL!)
+                    : null,
+                child: _user?.photoURL == null
+                    ? const Icon(Icons.person, size: 20, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(_user?.uid)
+                      .get(),
+                  builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                    if (snapshot.hasError ||
+                        !snapshot.hasData ||
+                        snapshot.data?.data() == null) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -205,49 +246,54 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                           ),
                           Text(
                             'RetroQuest Player',
-                            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                            style: TextStyle(
+                                color: Colors.grey.shade400, fontSize: 12),
                           ),
                         ],
                       );
-                  }
-                  
-                  Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
-                  
-                  // Robust name fetching to support old and new data structures
-                  String firstName = data['first'] ?? data['firstName'] ?? '';
-                  String lastName = data['last'] ?? data['lastName'] ?? '';
-                  String displayName = '$firstName $lastName'.trim();
+                    }
 
-                  if (displayName.isEmpty) {
-                    displayName = data['displayName'] ?? data['name'] ?? 'Student';
-                  }
+                    Map<String, dynamic> data =
+                        snapshot.data!.data() as Map<String, dynamic>;
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'RetroQuest Player',
-                        style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                      ),
-                    ],
-                  );
-                },
+                    String firstName = data['first'] ?? data['firstName'] ?? '';
+                    String lastName = data['last'] ?? data['lastName'] ?? '';
+                    String displayName = '$firstName $lastName'.trim();
+
+                    if (displayName.isEmpty) {
+                      displayName =
+                          data['displayName'] ?? data['name'] ?? 'Student';
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'RetroQuest Player',
+                          style: TextStyle(
+                              color: Colors.grey.shade400, fontSize: 12),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 24),
         _buildNavSectionTitle('PLAY'),
-        _buildNavItem(Icons.play_arrow_outlined, 'Active',
-            isSelected: false, onTap: () {}),
+        _buildNavItem(Icons.group_outlined, 'Enrollments', // <--- ADD THIS
+            isSelected: _currentView == 'enrollments', // <--- ADD THIS
+            onTap: _showEnrollmentsView), // <--- ADD THIS
         _buildNavItem(Icons.search_outlined, 'Browse',
             isSelected: _currentView == 'browse', onTap: _showBrowseView),
         _buildNavItem(Icons.history_outlined, 'History',
@@ -255,11 +301,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         _buildNavItem(Icons.leaderboard_outlined, 'Leaderboard',
             isSelected: _currentView == 'leaderboard',
             onTap: _showLeaderboardView),
-        const SizedBox(height: 24),
+        const Spacer(),
         _buildNavSectionTitle('PRODUCT'),
         _buildNavItem(Icons.help_outline, 'Help',
             isSelected: false, onTap: () {}),
-        const Spacer(),
         _buildLogoutButton(),
       ],
     );
@@ -274,6 +319,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     }
     if (_currentView == 'leaderboard') {
       return const LeaderboardScreen();
+    }
+    if (_currentView == 'enrollments') {
+      // <--- ADD THIS
+      return _buildEnrollmentsView(); // <--- ADD THIS
     }
     return _buildDashboardContent();
   }
@@ -305,8 +354,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.greenAccent,
               foregroundColor: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -342,8 +390,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.greenAccent,
               foregroundColor: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -358,8 +405,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.greenAccent,
               foregroundColor: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -439,6 +485,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
 
                 if (!subjectData.containsKey('teacherId') ||
                     subjectData['teacherId'] == null) {
+                  // NEW LOGIC FOR NO TEACHER ID: Prevent access.
                   return Card(
                     margin: const EdgeInsets.symmetric(vertical: 8.0),
                     color: Colors.black54,
@@ -451,18 +498,18 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                               fontFamily: 'PressStart2P')),
-                      subtitle: const Text('by Unknown Teacher',
+                      subtitle: const Text('by Unknown Teacher (Unprotected)',
                           style: TextStyle(color: Colors.white70)),
-                      trailing: const Icon(Icons.arrow_forward_ios,
-                          color: Colors.greenAccent),
+                      trailing: const Icon(Icons.lock_outline,
+                          color: Colors.redAccent),
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                QuizScreen(subject: subjectName),
-                          ),
-                        );
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content: Text(
+                                    'This quiz is not linked to a teacher and cannot be accessed.')),
+                          );
+                        }
                       },
                     ),
                   );
@@ -472,6 +519,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 final teacherData = teachersMap[teacherId];
 
                 final teacherName = _getTeacherName(teacherData);
+                final studentUid = _user?.uid; // <--- ADD THIS
 
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -489,15 +537,36 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                         style: const TextStyle(color: Colors.white70)),
                     trailing: const Icon(Icons.arrow_forward_ios,
                         color: Colors.greenAccent),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              QuizScreen(subject: subjectName),
-                        ),
-                      );
-                    },
+                    onTap: () async {
+                      // <--- MODIFIED TO ASYNC
+                      if (studentUid == null) return; // Should not happen
+
+                      final isEnrolled =
+                          await FirestoreService() // <--- ADD CHECK
+                              .isStudentEnrolled(
+                                  teacherUid: teacherId,
+                                  studentUid: studentUid);
+
+                      if (!context.mounted) return;
+
+                      if (isEnrolled) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                QuizScreen(subject: subjectName),
+                          ),
+                        );
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'You must be enrolled with $teacherName to access this quiz.')),
+                          );
+                        }
+                      }
+                    }, // <--- END OF MODIFIED onTap
                   ),
                 );
               },
@@ -531,8 +600,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                     fontFamily: 'PressStart2P')),
             subtitle: const Text('by Unknown Teacher',
                 style: TextStyle(color: Colors.white70)),
-            trailing: const Icon(Icons.arrow_forward_ios,
-                color: Colors.greenAccent),
+            trailing:
+                const Icon(Icons.arrow_forward_ios, color: Colors.greenAccent),
             onTap: () {
               Navigator.push(
                 context,
@@ -576,6 +645,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             final teacher = teachers[index];
             final teacherData = teacher.data() as Map<String, dynamic>?;
             final teacherName = _getTeacherName(teacherData);
+            final studentUid = _user?.uid; // <--- ADD THIS
 
             return Card(
               margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -591,16 +661,103 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                         fontFamily: 'PressStart2P')),
                 trailing: const Icon(Icons.arrow_forward_ios,
                     color: Colors.greenAccent),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => TeacherSubjectsScreen(
-                          teacherId: teacher.id, teacherName: teacherName),
-                    ),
-                  );
+                onTap: () async {
+                  if (studentUid == null) return; // Should not happen
+
+                  final isEnrolled = await FirestoreService() // <--- ADD CHECK
+                      .isStudentEnrolled(
+                          teacherUid: teacher.id, studentUid: studentUid);
+
+                  if (!context.mounted) return;
+
+                  if (isEnrolled) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TeacherSubjectsScreen(
+                            teacherId: teacher.id, teacherName: teacherName),
+                      ),
+                    );
+                  } else {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                            content: Text(
+                                'You must be enrolled with $teacherName to view their quizzes.')),
+                      );
+                    }
+                  }
                 },
               ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildEnrollmentsView() {
+    final studentUid = _user?.uid;
+    if (studentUid == null) {
+      return const Center(
+          child: Text('User not logged in.',
+              style:
+                  TextStyle(color: Colors.white, fontFamily: 'PressStart2P')));
+    }
+
+    // Stream for enrollments *by* studentUid (requires a new method in FirestoreService)
+    // For now, we'll fetch all and filter client-side until a proper index is added
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('enrolledStudents')
+          .where('studentUid', isEqualTo: studentUid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+        final enrollments = snapshot.data!.docs
+            .map((doc) => EnrolledStudent.fromFirestore(doc))
+            .toList();
+
+        if (enrollments.isEmpty) {
+          return const Center(
+              child: Text('Not enrolled with any teacher.',
+                  style: TextStyle(
+                      color: Colors.white, fontFamily: 'PressStart2P')));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(24.0),
+          itemCount: enrollments.length,
+          itemBuilder: (context, index) {
+            final enrollment = enrollments[index];
+            return FutureBuilder<String>(
+              future: _getTeacherDisplayName(enrollment.teacherUid),
+              builder: (context, teacherNameSnapshot) {
+                final teacherName = teacherNameSnapshot.data ?? 'Loading...';
+                return Card(
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  color: Colors.black54,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading:
+                        const Icon(Icons.school, color: Colors.greenAccent),
+                    title: Text(teacherName,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'PressStart2P')),
+                    // subtitle: Text('Teacher ID: ${enrollment.teacherUid}',
+                    //     style: const TextStyle(color: Colors.white70)),
+                  ),
+                );
+              },
             );
           },
         );
@@ -631,8 +788,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(icon,
-            color: isSelected ? Colors.white : Colors.grey.shade400),
+        leading:
+            Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400),
         title: Text(
           title,
           style: TextStyle(
@@ -651,8 +808,34 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     return ListTile(
       leading: Icon(Icons.logout, color: Colors.grey.shade400),
       title: Text('Logout',
-          style: TextStyle(color: Colors.grey.shade400, fontFamily: 'PressStart2P')),
-      onTap: _logout,
+          style: TextStyle(
+              color: Colors.grey.shade400, fontFamily: 'PressStart2P')),
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Confirm Logout'),
+              content: const Text('Are you sure you want to log out?'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                ),
+                TextButton(
+                  child: const Text('Logout'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog first
+                    _logout(); // Then execute the logout function
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
       dense: true,
     );
   }

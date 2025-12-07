@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:retroquest/screens/quiz_screen.dart';
+import 'package:retroquest/services/firestore_service.dart';
 
 class TeacherSubjectsScreen extends StatelessWidget {
   final String teacherId;
@@ -32,10 +33,7 @@ class TeacherSubjectsScreen extends StatelessWidget {
           ),
           Container(color: Colors.black.withAlpha(153)),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection('subjects')
-                .where('teacherId', isEqualTo: teacherId)
-                .snapshots(),
+            stream: FirestoreService().getTeacherQuizzes(teacherId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -46,7 +44,8 @@ class TeacherSubjectsScreen extends StatelessWidget {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return const Center(
                     child: Text('No subjects found for this teacher.',
-                        style: TextStyle(color: Colors.white, fontFamily: 'PressStart2P')));
+                        style: TextStyle(
+                            color: Colors.white, fontFamily: 'PressStart2P')));
               }
 
               final subjects = snapshot.data!.docs;
@@ -67,13 +66,17 @@ class TeacherSubjectsScreen extends StatelessWidget {
                     child: ListTile(
                       title: Text(subjectName,
                           style: const TextStyle(
-                              fontWeight: FontWeight.bold, color: Colors.white, fontFamily: 'PressStart2P')),
-                      trailing: const Icon(Icons.arrow_forward_ios, color: Colors.greenAccent),
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              fontFamily: 'PressStart2P')),
+                      trailing: const Icon(Icons.arrow_forward_ios,
+                          color: Colors.greenAccent),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => QuizScreen(subject: subjectName),
+                            builder: (context) =>
+                                QuizScreen(subject: subjectName),
                           ),
                         );
                       },

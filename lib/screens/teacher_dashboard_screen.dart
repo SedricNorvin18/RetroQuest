@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:retroquest/models/question_model.dart';
 import 'package:retroquest/screens/history_screen.dart';
+import 'package:retroquest/services/firestore_service.dart'; // <--- ADD THIS
+import 'package:retroquest/models/enrolled_student.dart'; // <--- ADD THIS
+import 'package:retroquest/screens/account_settings_screen.dart'; // <--- ADD THIS
+import 'package:retroquest/screens/profile_screen.dart'; // <--- ADD THIS
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -54,6 +58,128 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     super.dispose();
   }
 
+  Future<void> _addStudentDialog() async {
+    final TextEditingController emailController = TextEditingController();
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Enroll New Student'),
+        content: TextField(
+          controller: emailController,
+          decoration: const InputDecoration(labelText: 'Student Email'),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              final email = emailController.text.trim();
+              if (email.isEmpty) return;
+              Navigator.of(context).pop(); // Close dialog
+
+              await _enrollStudent(email);
+            },
+            child: const Text('Enroll'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _enrollStudent(String studentEmail) async {
+    final teacherUid = _user?.uid;
+    if (teacherUid == null) return;
+
+    if (mounted) {
+      setState(() => _isLoading = true);
+    }
+
+    try {
+      // 1. Find the student's UID by email
+      final studentDoc =
+          await FirestoreService().getUserProfileByEmail(studentEmail);
+
+      if (studentDoc == null) {
+        throw Exception('No user found with that email.');
+      }
+
+      final studentUid = studentDoc.id;
+      final studentData = studentDoc.data() as Map<String, dynamic>;
+      final studentRole = studentData['role'];
+
+      if (studentRole != 'student') {
+        throw Exception('User is not a student.');
+      }
+
+      // 2. Perform the enrollment
+      await FirestoreService().enrollStudent(
+        teacherUid: teacherUid,
+        studentUid: studentUid,
+        studentEmail: studentEmail,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text('Student $studentEmail enrolled successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'Failed to enroll student: ${e.toString().split(':').last}')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _unenrollStudent(
+      String enrollmentId, String studentEmail) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Unenroll Student'),
+        content: Text('Are you sure you want to unenroll $studentEmail?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Unenroll'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirestoreService().unenrollStudent(enrollmentId);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$studentEmail unenrolled successfully!')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to unenroll student: $e')),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _loadSubjects() async {
     setState(() => _isLoading = true);
     try {
@@ -64,9 +190,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           .where('teacherId', isEqualTo: user.uid)
           .orderBy('order')
           .get();
-      final subjects = subjectDocs.docs
-          .map((doc) => {'id': doc.id, ...doc.data()})
-          .toList();
+      final subjects =
+          subjectDocs.docs.map((doc) => {'id': doc.id, ...doc.data()}).toList();
       setState(() {
         _subjects = subjects;
         _isLoading = false;
@@ -86,6 +211,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     // AuthGate will handle navigation
   }
 
+  void _showStudentsView() {
+    setState(() {
+      _currentView = 'students';
+    });
+  }
+
   void _showQuizList() {
     setState(() {
       _currentView = 'quizzes';
@@ -96,55 +227,58 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   void _showUploadForm({
-  Question? question,
-  String? subjectId,
-  bool isNewQuiz = false,
-}) {
-  setState(() {
-    _currentView = 'upload';
+    Question? question,
+    String? subjectId,
+    bool isNewQuiz = false,
+  }) {
+    setState(() {
+      _currentView = 'upload';
 
-    // Reset form first to avoid stray values
-    _clearForm();
+      // Reset form first to avoid stray values
+      _clearForm();
 
-    // Remember whether we are editing a question
-    _questionToEdit = question;
+      // Remember whether we are editing a question
+      _questionToEdit = question;
 
-    // 1) If editing an existing question -> populate everything (take precedence)
-    if (question != null) {
-      // If subjectId provided use it; otherwise keep whatever (could be null)
-      _selectedSubjectForQuestions = subjectId;
-      _subjectController.text = subjectId ?? '';
+      // 1) If editing an existing question -> populate everything (take precedence)
+      if (question != null) {
+        // If subjectId provided use it; otherwise keep whatever (could be null)
+        _selectedSubjectForQuestions = subjectId;
+        _subjectController.text = subjectId ?? '';
 
-      _questionController.text = question.text;
-      _option1Controller.text = question.options.isNotEmpty ? question.options[0] : '';
-      _option2Controller.text = question.options.length > 1 ? question.options[1] : '';
-      _option3Controller.text = question.options.length > 2 ? question.options[2] : '';
-      _option4Controller.text = question.options.length > 3 ? question.options[3] : '';
-      _correctOption.value = question.options.indexOf(question.correctAnswer);
-      _timeLimitController.text = question.timeLimit?.toString() ?? '';
-      return; // done — editing wins
-    }
+        _questionController.text = question.text;
+        _option1Controller.text =
+            question.options.isNotEmpty ? question.options[0] : '';
+        _option2Controller.text =
+            question.options.length > 1 ? question.options[1] : '';
+        _option3Controller.text =
+            question.options.length > 2 ? question.options[2] : '';
+        _option4Controller.text =
+            question.options.length > 3 ? question.options[3] : '';
+        _correctOption.value = question.options.indexOf(question.correctAnswer);
+        _timeLimitController.text = question.timeLimit?.toString() ?? '';
+        return; // done — editing wins
+      }
 
-    // 2) If explicitly creating a NEW QUIZ, clear selected subject so Subject input shows empty
-    if (isNewQuiz) {
+      // 2) If explicitly creating a NEW QUIZ, clear selected subject so Subject input shows empty
+      if (isNewQuiz) {
+        _selectedSubjectForQuestions = null;
+        _subjectController.text = '';
+        return;
+      }
+
+      // 3) Otherwise, if a subjectId was provided (Add Question flow), set it
+      if (subjectId != null) {
+        _selectedSubjectForQuestions = subjectId;
+        _subjectController.text = subjectId;
+        return;
+      }
+
+      // 4) Default: nothing to prefill (keeps form cleared)
       _selectedSubjectForQuestions = null;
       _subjectController.text = '';
-      return;
-    }
-
-    // 3) Otherwise, if a subjectId was provided (Add Question flow), set it
-    if (subjectId != null) {
-      _selectedSubjectForQuestions = subjectId;
-      _subjectController.text = subjectId;
-      return;
-    }
-
-    // 4) Default: nothing to prefill (keeps form cleared)
-    _selectedSubjectForQuestions = null;
-    _subjectController.text = '';
-  });
-}
-
+    });
+  }
 
   void _showQuestionsForSubject(String subjectId) {
     setState(() {
@@ -213,8 +347,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         'correctAnswer': options[_correctOption.value!],
         'createdAt': FieldValue.serverTimestamp(),
         'teacherId': user.uid,
-        'timeLimit':
-            int.tryParse(_timeLimitController.text) ?? 30, // Default to 30 seconds if not specified
+        'timeLimit': int.tryParse(_timeLimitController.text) ??
+            30, // Default to 30 seconds if not specified
       };
 
       if (_questionToEdit != null) {
@@ -345,8 +479,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           final oldDoc = await oldSubjectRef.get();
           final order = oldDoc.data()?['order'] ?? 0;
 
-          await newSubjectRef
-              .set({'teacherId': _user!.uid, 'order': order});
+          await newSubjectRef.set({'teacherId': _user!.uid, 'order': order});
           await oldSubjectRef.delete();
 
           _loadSubjects();
@@ -444,14 +577,17 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   ? _selectedSubjectForQuestions ?? 'Questions'
                   : _currentView == 'history'
                       ? 'History'
-                      : "RetroQuest",
+                      : _currentView == 'students' // <--- ADD THIS
+                          ? 'Enrolled Students' // <--- ADD THIS
+                          : "RetroQuest",
           style: const TextStyle(
               fontFamily: "PressStart2P", color: Colors.white, fontSize: 16),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
         leading: (_currentView == 'upload' ||
                 _currentView == 'questions' ||
-                _currentView == 'history')
+                _currentView == 'history' ||
+                _currentView == 'students') // <--- ADD THIS
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: _showQuizList,
@@ -484,21 +620,44 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        Row(
-          children: [
-            CircleAvatar(
-              radius: 20,
-              backgroundImage: _user?.photoURL != null
-                  ? NetworkImage(_user!.photoURL!)
-                  : null,
-              child: _user?.photoURL == null
-                  ? const Icon(Icons.person, size: 20, color: Colors.white)
-                  : null,
+        PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'account') {
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const AccountSettingsScreen()));
+            } else if (value == 'profile') {
+              Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const ProfileScreen()));
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+            const PopupMenuItem<String>(
+              value: 'account',
+              child: Text('Account'),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: FutureBuilder<DocumentSnapshot>(
-                future: FirebaseFirestore.instance.collection('users').doc(_user?.uid).get(),
+            const PopupMenuItem<String>(
+              value: 'profile',
+              child: Text('View profile'),
+            ),
+          ],
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: 20,
+                backgroundImage: _user?.photoURL != null
+                    ? NetworkImage(_user!.photoURL!)
+                    : null,
+                child: _user?.photoURL == null
+                    ? const Icon(Icons.person, size: 20, color: Colors.white)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(_user?.uid)
+                      .get(),
                 builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
                   // if (snapshot.connectionState == ConnectionState.waiting) {
                   //    return const Text(
@@ -510,12 +669,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   //       overflow: TextOverflow.ellipsis,
                   //     );
                   // }
-                  if (snapshot.hasError || !snapshot.hasData || snapshot.data?.data() == null) {
+                  if (snapshot.hasError ||
+                        !snapshot.hasData ||
+                        snapshot.data?.data() == null) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _user?.displayName ?? 'Student',
+                            _user?.displayName ?? 'Teacher', // NOTE: Changed 'Student' to 'Teacher'
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -524,49 +685,56 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                           ),
                           Text(
                             'RetroQuest Teacher',
-                            style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                            style: TextStyle(
+                                color: Colors.grey.shade400, fontSize: 12),
                           ),
                         ],
                       );
-                  }
-                  
-                  Map<String, dynamic> data = snapshot.data!.data() as Map<String, dynamic>;
-                  
-                  // Robust name fetching to support old and new data structures
-                  String firstName = data['first'] ?? data['firstName'] ?? '';
-                  String lastName = data['last'] ?? data['lastName'] ?? '';
-                  String displayName = '$firstName $lastName'.trim();
+                    }
 
-                  if (displayName.isEmpty) {
-                    displayName = data['displayName'] ?? data['name'] ?? 'Student';
-                  }
+                    Map<String, dynamic> data =
+                        snapshot.data!.data() as Map<String, dynamic>;
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        displayName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        'RetroQuest Teacher',
-                        style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
-                      ),
-                    ],
-                  );
-                },
+                    // Robust name fetching to support old and new data structures
+                    String firstName = data['first'] ?? data['firstName'] ?? '';
+                    String lastName = data['last'] ?? data['lastName'] ?? '';
+                    String displayName = '$firstName $lastName'.trim();
+
+                    if (displayName.isEmpty) {
+                      displayName =
+                          data['displayName'] ?? data['name'] ?? 'Teacher'; // NOTE: Changed 'Student' to 'Teacher'
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          'RetroQuest Teacher',
+                          style: TextStyle(
+                              color: Colors.grey.shade400, fontSize: 12),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        
-        
+
         const SizedBox(height: 24),
         _buildNavSectionTitle('MANAGE'),
+        _buildNavItem(Icons.people_alt_outlined, 'Students', // <--- ADD THIS
+            isSelected: _currentView == 'students',
+            onTap: _showStudentsView), // <--- ADD THIS
         _buildNavItem(Icons.add, 'New quiz',
             isSelected: _currentView == 'upload',
             onTap: () => _showUploadForm(isNewQuiz: true)),
@@ -598,6 +766,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     if (_currentView == 'history') {
       return const HistoryScreen();
     }
+
+    if (_currentView == 'students') {
+      // <--- ADD THIS
+      return _buildStudentsView(); // <--- ADD THIS
+    }
+
     return _subjects.isEmpty ? _buildEmptyState() : _buildSubjectList();
   }
 
@@ -628,8 +802,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.greenAccent,
               foregroundColor: Colors.black,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
               textStyle: const TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 16,
@@ -761,8 +934,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Text('Time: ${question.timeLimit}s',
-                                    style: const TextStyle(
-                                        color: Colors.white70)),
+                                    style:
+                                        const TextStyle(color: Colors.white70)),
                               )
                           ],
                         ),
@@ -770,8 +943,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             IconButton(
-                              icon: const Icon(Icons.edit,
-                                  color: Colors.white70),
+                              icon:
+                                  const Icon(Icons.edit, color: Colors.white70),
                               onPressed: () => _showUploadForm(
                                   question: question,
                                   subjectId: _selectedSubjectForQuestions),
@@ -957,6 +1130,45 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  Widget _buildStudentListItem(EnrolledStudent student) {
+    return FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+      future: FirestoreService().getUserProfile(student.studentUid),
+      builder: (context, snapshot) {
+        String displayName = student.studentEmail; // Default to email
+
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          final data = snapshot.data?.data();
+          // Check for 'displayName' field from the /users collection
+          displayName = data?['displayName'] ?? student.studentEmail;
+        }
+
+        return Card(
+          key: ValueKey(student.id),
+          margin: const EdgeInsets.symmetric(vertical: 8.0),
+          color: Colors.black54,
+          elevation: 4,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: ListTile(
+            leading: const Icon(Icons.person, color: Colors.white70),
+            title: Text(displayName, // Display the name/email
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontFamily: 'PressStart2P')),
+            // REMOVED SUBTITLE: The UID is no longer displayed
+            trailing: IconButton(
+              icon: const Icon(Icons.person_remove, color: Colors.pinkAccent),
+              onPressed: () =>
+                  _unenrollStudent(student.id!, student.studentEmail),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   List<Widget> _buildOptionFields() {
     final controllers = [
       _option1Controller,
@@ -986,29 +1198,31 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildRadioGroup() {
-  return ValueListenableBuilder<int?>(
-    valueListenable: _correctOption,
-    builder: (context, selected, child) {
-      return RadioGroup<int>( // Wrap with RadioGroup
-        groupValue: selected, // Move groupValue here
-        onChanged: (int? value) { // Move onChanged here
-          _correctOption.value = value;
-        },
-        child: Column(
-          children: List.generate(4, (index) {
-            return RadioListTile<int>(
-              title: Text('Option ${index + 1}',
-                  style: const TextStyle(color: Colors.white)),
-              value: index,
-              // groupValue and onChanged are now managed by RadioGroup
-              activeColor: Colors.greenAccent,
-            );
-          }),
-        ),
-      );
-    },
-  );
-}
+    return ValueListenableBuilder<int?>(
+      valueListenable: _correctOption,
+      builder: (context, selected, child) {
+        return RadioGroup<int>(
+          // Wrap with RadioGroup
+          groupValue: selected, // Move groupValue here
+          onChanged: (int? value) {
+            // Move onChanged here
+            _correctOption.value = value;
+          },
+          child: Column(
+            children: List.generate(4, (index) {
+              return RadioListTile<int>(
+                title: Text('Option ${index + 1}',
+                    style: const TextStyle(color: Colors.white)),
+                value: index,
+                // groupValue and onChanged are now managed by RadioGroup
+                activeColor: Colors.greenAccent,
+              );
+            }),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildNavSectionTitle(String title) {
     return Padding(
@@ -1032,8 +1246,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: ListTile(
-        leading: Icon(icon,
-            color: isSelected ? Colors.white : Colors.grey.shade400),
+        leading:
+            Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400),
         title: Text(
           title,
           style: TextStyle(
@@ -1048,13 +1262,95 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  Widget _buildStudentsView() {
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: FloatingActionButton(
+        onPressed: _addStudentDialog,
+        backgroundColor: Colors.greenAccent,
+        child: const Icon(Icons.person_add, color: Colors.black),
+      ),
+      body: StreamBuilder<List<EnrolledStudent>>(
+        stream: FirestoreService().getEnrolledStudents(_user!.uid),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          final students = snapshot.data ?? [];
+
+          if (students.isEmpty) {
+            return const Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'No students enrolled.',
+                    style: TextStyle(
+                        fontSize: 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'PressStart2P'),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Tap the + button to enroll a student by email.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, color: Colors.white70),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(24.0),
+            itemCount: students.length,
+            itemBuilder: (context, index) {
+              final student = students[index];
+              return _buildStudentListItem(
+                  student); // Use the new nested builder
+            },
+          );
+        },
+      ),
+    );
+  }
+
   Widget _buildLogoutButton() {
     return ListTile(
       leading: Icon(Icons.logout, color: Colors.grey.shade400),
       title: Text('Logout',
           style: TextStyle(
               color: Colors.grey.shade400, fontFamily: 'PressStart2P')),
-      onTap: _logout,
+      onTap: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Confirm Logout'),
+              content: const Text('Are you sure you want to log out?'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog
+                  },
+                ),
+                TextButton(
+                  child: const Text('Logout'),
+                  onPressed: () {
+                    Navigator.of(context).pop(); // Close the dialog first
+                    _logout(); // Then execute the logout function
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
       dense: true,
     );
   }

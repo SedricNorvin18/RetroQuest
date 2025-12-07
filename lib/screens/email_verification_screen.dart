@@ -116,6 +116,28 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
             },
           ),
         ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              backgroundColor: Colors.redAccent,
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.cancel_outlined),
+            label: const Text('CLOSE',
+                style:
+                    TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1.5)),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (!mounted) return;
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const InitialGate()),
+              );
+            },
+          ),
+        ),
       ],
     );
   }

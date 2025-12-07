@@ -66,8 +66,10 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<List<Question>> _loadQuestions() async {
-    final subjectDoc =
-        await FirebaseFirestore.instance.collection('subjects').doc(widget.subject).get();
+    final subjectDoc = await FirebaseFirestore.instance
+        .collection('subjects')
+        .doc(widget.subject)
+        .get();
     if (subjectDoc.exists) {
       _teacherId = subjectDoc.data()!['teacherId'];
     }
@@ -174,13 +176,15 @@ class _QuizScreenState extends State<QuizScreen> {
             future: _questionsFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator(color: Colors.white));
+                return const Center(
+                    child: CircularProgressIndicator(color: Colors.white));
               }
               if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return Center(
                   child: Text(
                     'No questions found for ${widget.subject}.',
-                    style: textTheme.headlineSmall?.copyWith(color: Colors.white),
+                    style:
+                        textTheme.headlineSmall?.copyWith(color: Colors.white),
                   ),
                 );
               }
@@ -210,14 +214,12 @@ class _QuizScreenState extends State<QuizScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         const SizedBox(height: 20),
-                        Text(
-                          'Quiz: ${widget.subject}',
-                          textAlign: TextAlign.center,
-                          style: textTheme.headlineMedium?.copyWith(
-                            color: Colors.white,
-                            fontFamily: "PressStart2P",
-                          )
-                        ),
+                        Text('Quiz: ${widget.subject}',
+                            textAlign: TextAlign.center,
+                            style: textTheme.headlineMedium?.copyWith(
+                              color: Colors.white,
+                              fontFamily: "PressStart2P",
+                            )),
                         const SizedBox(height: 20),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -227,7 +229,8 @@ class _QuizScreenState extends State<QuizScreen> {
                             center: Text(
                               "${(_currentIndex + 1)}/${_questions.length}",
                               style: const TextStyle(
-                                  color: Colors.black, fontWeight: FontWeight.bold),
+                                  color: Colors.black,
+                                  fontWeight: FontWeight.bold),
                             ),
                             backgroundColor: Colors.grey.shade700,
                             progressColor: Colors.greenAccent,
@@ -235,7 +238,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        if (currentQuestion.timeLimit != null && currentQuestion.timeLimit! > 0)
+                        if (currentQuestion.timeLimit != null &&
+                            currentQuestion.timeLimit! > 0)
                           Text(
                             'Time: $_countdown',
                             textAlign: TextAlign.center,
@@ -261,7 +265,8 @@ class _QuizScreenState extends State<QuizScreen> {
                           child: Text(
                             currentQuestion.text,
                             textAlign: TextAlign.center,
-                            style: textTheme.headlineSmall?.copyWith(color: Colors.white),
+                            style: textTheme.headlineSmall
+                                ?.copyWith(color: Colors.white),
                           ),
                         ),
                         const SizedBox(height: 30),
@@ -273,7 +278,8 @@ class _QuizScreenState extends State<QuizScreen> {
                               return GestureDetector(
                                 onTap: () => _answerQuestion(option),
                                 child: Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  margin:
+                                      const EdgeInsets.symmetric(vertical: 8),
                                   padding: const EdgeInsets.all(15),
                                   decoration: BoxDecoration(
                                     color: _getOptionColor(option),
@@ -295,7 +301,8 @@ class _QuizScreenState extends State<QuizScreen> {
                                       Expanded(
                                         child: Text(
                                           option,
-                                          style: textTheme.bodyLarge?.copyWith(color: Colors.white),
+                                          style: textTheme.bodyLarge
+                                              ?.copyWith(color: Colors.white),
                                         ),
                                       ),
                                     ],
@@ -311,7 +318,7 @@ class _QuizScreenState extends State<QuizScreen> {
                           textAlign: TextAlign.center,
                           style: textTheme.headlineLarge?.copyWith(
                             color: Colors.greenAccent,
-                             fontFamily: "PressStart2P",
+                            fontFamily: "PressStart2P",
                             shadows: [
                               const Shadow(
                                 blurRadius: 10.0,

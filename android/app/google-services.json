@@ -2,7 +2,7 @@
   "project_info": {
     "project_number": "694711600391",
     "project_id": "retroquest-11331898-85115",
-    "storage_bucket": "retroquest-11331898-85115.appspot.com"
+    "storage_bucket": "retroquest-11331898-85115.firebasestorage.app"
   },
   "client": [
     {
@@ -37,13 +37,6 @@
             {
               "client_id": "694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com",
               "client_type": 3
-            },
-            {
-              "client_id": "694711600391-4f5rvnhqinhamu1ve2bda2tbst6p0a8d.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "com.example.tempProject"
-              }
             }
           ]
         }

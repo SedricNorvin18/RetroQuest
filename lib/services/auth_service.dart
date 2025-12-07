@@ -7,11 +7,11 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: kIsWeb 
-      ? null 
-      : '694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com',
+    clientId: kIsWeb
+        ? null
+        : '694711600391-9plpr73d7jug3h05ae05e75rk3q33h0c.apps.googleusercontent.com',
   );
 
   Future<void> _saveGoogleUser(User user) async {
@@ -60,7 +60,7 @@ class AuthService {
     final user = userCredential.user;
     if (user != null) {
       await user.updateDisplayName(name);
-      await user.reload(); 
+      await user.reload();
 
       final nameParts = name.split(' ');
       final firstName = nameParts.isNotEmpty ? nameParts.first : '';
@@ -84,6 +84,22 @@ class AuthService {
   Future<UserCredential> signIn(String email, String password) =>
       _auth.signInWithEmailAndPassword(email: email, password: password);
 
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _auth.sendPasswordResetEmail(email: email);
+  }
+
+  Future<String> verifyPasswordResetCode(String code) async {
+    return await _auth.verifyPasswordResetCode(code);
+  }
+
+  Future<void> confirmPasswordReset(String code, String newPassword) async {
+    await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
+  }
+
+   Future<void> applyActionCode(String code) async {
+    await _auth.applyActionCode(code);
+  }
+
   Future<User?> signInWithGoogle({bool forceSelectAccount = false}) async {
     if (kIsWeb) {
       return _signInWithGoogleForWeb(forceSelectAccount: forceSelectAccount);
@@ -92,7 +108,8 @@ class AuthService {
     }
   }
 
-  Future<User?> _signInWithGoogleForMobile({bool forceSelectAccount = false}) async {
+  Future<User?> _signInWithGoogleForMobile(
+      {bool forceSelectAccount = false}) async {
     try {
       if (forceSelectAccount) {
         await _googleSignIn.signOut();
@@ -104,24 +121,25 @@ class AuthService {
         return null;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
       final OAuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final UserCredential userCredential = await _auth.signInWithCredential(credential);
+      final UserCredential userCredential =
+          await _auth.signInWithCredential(credential);
       final user = userCredential.user;
 
       if (user != null) {
         await _handlePostSignInUser(user);
       }
-      
-      return user;
 
+      return user;
     } on FirebaseAuthException catch (e) {
-       if (e.code == 'account-exists-with-different-credential') {
+      if (e.code == 'account-exists-with-different-credential') {
         throw Exception(
             'An account already exists with this email. Please sign in with your original method.');
       }
@@ -133,8 +151,9 @@ class AuthService {
     }
   }
 
-  Future<User?> _signInWithGoogleForWeb({bool forceSelectAccount = false}) async {
-     try {
+  Future<User?> _signInWithGoogleForWeb(
+      {bool forceSelectAccount = false}) async {
+    try {
       final GoogleAuthProvider googleProvider = GoogleAuthProvider();
 
       if (forceSelectAccount) {
@@ -155,7 +174,7 @@ class AuthService {
         throw Exception(
             'An account already exists with this email. Please sign in with your original method.');
       } else if (e.code == 'popup-closed-by-user') {
-        return null; 
+        return null;
       }
       throw Exception(
           'A Firebase authentication error occurred. Please try again.');
@@ -167,15 +186,14 @@ class AuthService {
 
   Future<void> _handlePostSignInUser(User user) async {
     await _saveGoogleUser(user);
-    
+
     final userDocRef = _firestore.collection('users').doc(user.uid);
     final doc = await userDocRef.get();
 
     final name = user.displayName ?? '';
     final nameParts = name.split(' ');
     final firstName = nameParts.isNotEmpty ? nameParts.first : '';
-    final lastName =
-        nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+    final lastName = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
 
     if (!doc.exists) {
       await userDocRef.set({

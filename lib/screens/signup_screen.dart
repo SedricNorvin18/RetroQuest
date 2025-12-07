@@ -33,7 +33,8 @@ class _SignupScreenState extends State<SignupScreen> {
   Future<void> _signup() async {
     if (!mounted || !_formKey.currentState!.validate()) return;
 
-    if (_passwordController.text.trim() != _confirmPasswordController.text.trim()) {
+    if (_passwordController.text.trim() !=
+        _confirmPasswordController.text.trim()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Passwords do not match!")),
@@ -46,7 +47,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
-      final fullName = "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
+      final fullName =
+          "${_firstNameController.text.trim()} ${_lastNameController.text.trim()}";
       await authService.signUp(
         _emailController.text.trim(),
         _passwordController.text.trim(),
@@ -57,7 +59,8 @@ class _SignupScreenState extends State<SignupScreen> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const EmailVerificationScreen()),
+          MaterialPageRoute(
+              builder: (context) => const EmailVerificationScreen()),
         );
       }
     } catch (e) {
@@ -97,7 +100,8 @@ class _SignupScreenState extends State<SignupScreen> {
                       decoration: BoxDecoration(
                         color: Colors.black.withAlpha(178),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: Colors.greenAccent, width: 1.5),
+                        border:
+                            Border.all(color: Colors.greenAccent, width: 1.5),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.greenAccent.withAlpha(128),
@@ -138,9 +142,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "First Name",
-                                  labelStyle: const TextStyle(color: Colors.white70),
-                                  prefixIcon:
-                                      const Icon(Icons.person, color: Colors.greenAccent),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.person,
+                                      color: Colors.greenAccent),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -160,7 +165,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Last Name",
-                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
                                   prefixIcon: const Icon(Icons.person_outline,
                                       color: Colors.pinkAccent),
                                   border: OutlineInputBorder(
@@ -182,7 +188,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Email",
-                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
                                   prefixIcon: const Icon(Icons.email,
                                       color: Colors.greenAccent),
                                   border: OutlineInputBorder(
@@ -193,7 +200,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   if (value == null || value.isEmpty) {
                                     return 'Please enter your email';
                                   }
-                                  if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+                                  if (!RegExp(
+                                          r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                                      .hasMatch(value)) {
                                     return 'Please enter a valid email';
                                   }
                                   return null;
@@ -208,9 +217,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Password",
-                                  labelStyle: const TextStyle(color: Colors.white70),
-                                  prefixIcon:
-                                      const Icon(Icons.lock, color: Colors.pinkAccent),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.lock,
+                                      color: Colors.pinkAccent),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -231,9 +241,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Confirm Password",
-                                  labelStyle: const TextStyle(color: Colors.white70),
-                                  prefixIcon:
-                                      const Icon(Icons.lock, color: Colors.pinkAccent),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
+                                  prefixIcon: const Icon(Icons.lock,
+                                      color: Colors.pinkAccent),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -254,7 +265,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                   filled: true,
                                   fillColor: Colors.black54,
                                   labelText: "Select Role",
-                                  labelStyle: const TextStyle(color: Colors.white70),
+                                  labelStyle:
+                                      const TextStyle(color: Colors.white70),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -280,7 +292,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 16),
                                     backgroundColor: Colors.greenAccent,
                                     foregroundColor: Colors.black,
                                     shape: RoundedRectangleBorder(
@@ -289,7 +302,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                   onPressed: _isLoading ? null : _signup,
                                   child: _isLoading
-                                      ? const CircularProgressIndicator(color: Colors.black)
+                                      ? const CircularProgressIndicator(
+                                          color: Colors.black)
                                       : const Text(
                                           "SIGN UP",
                                           style: TextStyle(
@@ -305,7 +319,8 @@ class _SignupScreenState extends State<SignupScreen> {
                                 width: double.infinity,
                                 child: OutlinedButton.icon(
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 14),
                                     side: const BorderSide(
                                         color: Colors.greenAccent, width: 2),
                                     shape: RoundedRectangleBorder(

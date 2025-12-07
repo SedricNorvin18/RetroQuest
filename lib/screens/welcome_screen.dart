@@ -94,7 +94,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             horizontal: 30, vertical: 20),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.0),
-                          side: const BorderSide(color: Colors.greenAccent, width: 2),
+                          side: const BorderSide(
+                              color: Colors.greenAccent, width: 2),
                         ),
                       ),
                       child: Text(
@@ -155,7 +156,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             horizontal: 50, vertical: 25),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8.0),
-                          side: const BorderSide(color: Colors.greenAccent, width: 2),
+                          side: const BorderSide(
+                              color: Colors.greenAccent, width: 2),
                         ),
                       ),
                       child: Text(
