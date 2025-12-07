@@ -27,6 +27,7 @@ dependencies:
   shared_preferences: ^2.5.3
   web: ^0.5.1
   flutter_svg: ^2.0.10+1
+  path: ^1.9.1
 
 
 dev_dependencies:

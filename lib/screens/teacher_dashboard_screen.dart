@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +9,12 @@ import 'package:retroquest/services/firestore_service.dart'; // <--- ADD THIS
 import 'package:retroquest/models/enrolled_student.dart'; // <--- ADD THIS
 import 'package:retroquest/screens/account_settings_screen.dart'; // <--- ADD THIS
 import 'package:retroquest/screens/profile_screen.dart'; // <--- ADD THIS
+// Required for File handling
+// Required for file upload
+import 'package:image_picker/image_picker.dart'; // Required for image selection
+import 'package:path/path.dart' as path;
+import 'package:retroquest/services/storage_service.dart'; // For file path manipulation
+
 
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
@@ -16,12 +24,19 @@ class TeacherDashboardScreen extends StatefulWidget {
 }
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
+
+  // NEW: Initialize StorageService
+  final StorageService _storageService = StorageService(); // <--- ADD THIS
   // General state
   final User? _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = true;
   String? _selectedSubjectForQuestions;
   String _currentView =
       'quizzes'; // 'quizzes', 'upload', 'questions', or 'history'
+
+// NEW: State for the question type dropdown
+  QuestionType _selectedQuestionType = QuestionType.multipleChoice; // <--- ADD THIS
+
 
   // Quiz list state
   List<Map<String, dynamic>> _subjects = [];
@@ -34,6 +49,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   final _option2Controller = TextEditingController();
   final _option3Controller = TextEditingController();
   final _option4Controller = TextEditingController();
+  // NEW/UPDATED: Image Upload State
+  Uint8List? _selectedImageBytes; // The image data (bytes)
+  String? _selectedImageName;    // The original file name
+  String? _existingImageUrl;     // URL if editing an existing question
+  bool _isUploadingImage = false;
   final _timeLimitController =
       TextEditingController(); // Controller for the time limit
   final ValueNotifier<int?> _correctOption = ValueNotifier(null);
@@ -257,6 +277,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             question.options.length > 3 ? question.options[3] : '';
         _correctOption.value = question.options.indexOf(question.correctAnswer);
         _timeLimitController.text = question.timeLimit?.toString() ?? '';
+        
+        // NEW: Populate image URL for editing
+        _selectedImageBytes = null; // <--- MAKE SURE THIS IS _selectedImageBytes
+        _selectedImageName = null;  // <--- ADD/CONFIRM THIS IS PRESENT
+        
         return; // done — editing wins
       }
 
@@ -303,22 +328,100 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     _option4Controller.clear();
     _timeLimitController.clear();
     _correctOption.value = null;
+
+    // NEW: Clear image state
+    _selectedImageBytes = null; // <--- UPDATE THIS
+    _selectedImageName = null;  // <--- ADD THIS
+    _existingImageUrl = null;
+    _isUploadingImage = false;
+
+    // NEW: Reset the question type
+    _selectedQuestionType = QuestionType.multipleChoice; // <--- ADD THIS
+
   }
 
   Future<void> _uploadQuestion() async {
+
+    
+
+
+    
+    // Modify validation based on question type
+    final requiresOptions = _selectedQuestionType == QuestionType.multipleChoice ||
+        _selectedQuestionType == QuestionType.trueFalse;
+        
     if (_formKey.currentState?.validate() != true ||
-        _correctOption.value == null) {
+        (requiresOptions && _correctOption.value == null)) { // <--- MODIFIED
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
               content:
-                  Text('Please fill all fields and select a correct option.')),
+                  Text('Please fill all required fields and select a correct option.')), // <--- MODIFIED
         );
       }
       return;
     }
 
     setState(() => _isUploading = true);
+
+    String? finalImageUrl = _existingImageUrl; // Start with the existing URL
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // Check for bytes and name
+    if (_selectedImageBytes != null && _selectedImageName != null) {
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      try {
+        finalImageUrl = await _storageService.uploadQuestionImage(
+            _selectedImageBytes!, user.uid, _selectedImageName!); // <--- UPDATED CALL
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image upload failed. Please try again.')));
+        }
+        setState(() {
+          _isUploading = false;
+          _isUploadingImage = false;
+        });
+        return; // Stop the question upload process
+      }
+
+      setState(() {
+        _isUploadingImage = false;
+      });
+    }
+    // END NEW: Handle Image Upload
+    
+    // NEW: Handle Image Upload
+    if (_selectedImageBytes != null && _selectedImageName != null) {
+      setState(() {
+        _isUploadingImage = true;
+      });
+
+      try {
+        // Use the initialized _storageService and the new byte/name variables
+        finalImageUrl = await _storageService.uploadQuestionImage(
+            _selectedImageBytes!, user.uid, _selectedImageName!);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Image upload failed. Please try again.')));
+        }
+        setState(() {
+          _isUploading = false;
+          _isUploadingImage = false;
+        });
+        return; // Stop the question upload process
+      }
+
+      setState(() {
+        _isUploadingImage = false;
+      });
+    }
+    // END NEW: Handle Image Upload
 
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -335,16 +438,35 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       }
 
       final questionCollection = subjectRef.collection('questions');
-      final options = [
-        _option1Controller.text,
-        _option2Controller.text,
-        _option3Controller.text,
-        _option4Controller.text,
-      ];
+
+      // NEW: Dynamic options and correct answer based on type
+      List<String> options;
+      String correctAnswer;
+
+      if (_selectedQuestionType == QuestionType.multipleChoice) {
+        options = [
+          _option1Controller.text,
+          _option2Controller.text,
+          _option3Controller.text,
+          _option4Controller.text,
+        ];
+        correctAnswer = options[_correctOption.value!];
+      } else if (_selectedQuestionType == QuestionType.trueFalse) {
+        options = ['True', 'False'];
+        correctAnswer = options[_correctOption.value!];
+      } else { // FillInTheBlank or ShortAnswer
+        // For these types, the 'correctAnswer' is just the text from the first option/controller
+        // And 'options' is typically empty or just contains the answer for simplicity in Firestore
+        options = [];
+        correctAnswer = _option1Controller.text.trim(); // Use option1 for the answer field
+      }
+
       final questionData = {
         'text': _questionController.text,
-        'options': options,
-        'correctAnswer': options[_correctOption.value!],
+        'options': options, // <--- MODIFIED
+        'correctAnswer': correctAnswer, // <--- MODIFIED
+        'questionType': _selectedQuestionType.toString().split('.').last, // <--- ADD THIS
+        'imageUrl': finalImageUrl, // <--- ADD/UPDATE THIS LINE
         'createdAt': FieldValue.serverTimestamp(),
         'teacherId': user.uid,
         'timeLimit': int.tryParse(_timeLimitController.text) ??
@@ -382,6 +504,24 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       if (mounted) {
         setState(() => _isUploading = false);
       }
+    }
+  }
+
+
+Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      // CRITICAL CHANGE: Read the bytes from the XFile
+      final bytes = await pickedFile.readAsBytes();
+      final fileName = path.basename(pickedFile.name);
+
+      setState(() {
+        _selectedImageBytes = bytes; // Store bytes
+        _selectedImageName = fileName; // Store name
+        _existingImageUrl = null; // A new file is selected, so discard old URL
+      });
     }
   }
 
@@ -921,15 +1061,37 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            for (var option in question.options)
+                            Text(
+                              'Type: ${question.questionType.toString().split('.').last.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')}',
+                              style: TextStyle(
+                                  color: Colors.grey.shade400, fontSize: 12),
+                            ),
+                            const SizedBox(height: 4),
+                            // --- Conditional Answer Display ---
+                            if (question.questionType == QuestionType.fillInTheBlank ||
+                                question.questionType == QuestionType.shortAnswer)
                               Text(
-                                option,
-                                style: TextStyle(
-                                  color: question.correctAnswer == option
-                                      ? Colors.greenAccent
-                                      : Colors.pinkAccent,
+                                'Correct Answer: "${question.correctAnswer}"',
+                                style: const TextStyle(
+                                  color: Colors.greenAccent,
+                                  fontWeight: FontWeight.bold,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 14,
                                 ),
                               ),
+                            if (question.questionType == QuestionType.multipleChoice ||
+                                question.questionType == QuestionType.trueFalse)
+                              ...question.options.map((option) {
+                                return Text(
+                                  option,
+                                  style: TextStyle(
+                                    color: question.correctAnswer == option
+                                        ? Colors.greenAccent
+                                        : Colors.pinkAccent,
+                                  ),
+                                );
+                              }),
+                            // --- End Conditional Answer Display ---
                             if (question.timeLimit != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8.0),
@@ -1029,13 +1191,51 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                             color: Colors.white,
                             fontFamily: 'PressStart2P')),
                     const SizedBox(height: 24),
+                    DropdownButtonFormField<QuestionType>(
+                      decoration: InputDecoration(
+                        labelText: 'Question Type',
+                        labelStyle: const TextStyle(color: Colors.white70),
+                        border: const OutlineInputBorder(),
+                        enabledBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.grey.shade600)),
+                        focusedBorder: const OutlineInputBorder(
+                            borderSide: BorderSide(color: Colors.greenAccent)),
+                        filled: true,
+                        fillColor: Colors.black45,
+                      ),
+                      dropdownColor: Colors.black,
+                      style: const TextStyle(color: Colors.white),
+                      initialValue: _selectedQuestionType,
+                      items: QuestionType.values.map((QuestionType type) {
+                        return DropdownMenuItem<QuestionType>(
+                          value: type,
+                          child: Text(
+                            type.toString().split('.').last.replaceAllMapped(
+                                RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}'),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (QuestionType? newValue) {
+                        setState(() {
+                          _selectedQuestionType = newValue ?? QuestionType.multipleChoice;
+                          // Clear options/answer input when changing type
+                          _option1Controller.clear();
+                          _option2Controller.clear();
+                          _option3Controller.clear();
+                          _option4Controller.clear();
+                          _correctOption.value = null;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // START OF FIX: This block adds the missing Subject TextFormField
                     if (_questionToEdit == null &&
                         _selectedSubjectForQuestions == null)
                       TextFormField(
                         controller: _subjectController,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                            labelText: 'Subject',
+                            labelText: 'Quiz Subject / Title',
                             labelStyle: const TextStyle(color: Colors.white70),
                             border: const OutlineInputBorder(),
                             enabledBorder: OutlineInputBorder(
@@ -1045,8 +1245,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                 borderSide:
                                     BorderSide(color: Colors.greenAccent))),
                         validator: (value) =>
-                            value!.isEmpty ? 'Please enter a subject' : null,
+                            value!.isEmpty ? 'Please enter a subject name' : null,
                       ),
+                    const SizedBox(height: 16),
+                    if (_questionToEdit == null &&
+                        _selectedSubjectForQuestions == null)
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _questionController,
@@ -1066,13 +1269,26 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                       validator: (value) =>
                           value!.isEmpty ? 'Please enter a question' : null,
                     ),
+
                     const SizedBox(height: 24),
-                    const Text('Options',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontFamily: 'PressStart2P')),
+
+                    // NEW: Image Upload Section
+                    _buildImageUploadSection(), // <--- ADD THIS CALL
+
+                    const SizedBox(height: 24), // Add separation
+                    
+                    // NEW: Conditional 'Options' label
+                    if (_selectedQuestionType == QuestionType.multipleChoice)
+
+                    // NEW: Conditional 'Options' label
+                    if (_selectedQuestionType == QuestionType.multipleChoice)
+                      const Text('Options',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontFamily: 'PressStart2P')),
+                    // NEW: Conditional option fields/answer fields
                     ..._buildOptionFields(),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -1099,13 +1315,16 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
-                    const Text('Correct Option',
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.white,
-                            fontFamily: 'PressStart2P')),
+                    // NEW: Conditional 'Correct Option' label
+                    if (_selectedQuestionType == QuestionType.multipleChoice ||
+                        _selectedQuestionType == QuestionType.trueFalse)
+                      const Text('Correct Option',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontFamily: 'PressStart2P')),
+                    // NEW: Conditional radio group
                     _buildRadioGroup(),
                     const SizedBox(height: 32),
                     ElevatedButton(
@@ -1127,6 +1346,77 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+Widget _buildImageUploadSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Question Image',
+                style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontFamily: 'PressStart2P')),
+            if (_isUploadingImage)
+              const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 100,
+          decoration: BoxDecoration(
+            color: const Color(0xFF2A314D),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.grey.shade600),
+          ),
+          child: InkWell(
+            onTap: _isUploadingImage ? null : _pickImage,
+            child: Center(
+              child: _selectedImageBytes != null 
+                  ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover) 
+                  : _existingImageUrl != null
+                      ? Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Image.network(_existingImageUrl!, fit: BoxFit.contain),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: IconButton(
+                                icon: const Icon(Icons.close_rounded, color: Colors.redAccent),
+                                onPressed: () {
+                                  setState(() {
+                                    _existingImageUrl = null;
+                                    _selectedImageBytes = null;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : const Text(
+                          'Tap to select image (Optional)',
+                          style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
+                        ),
+            ),
+          ),
+        ),
+        if (_selectedImageName != null)
+          Text(
+            'New file selected: $_selectedImageName', // <--- Use the new variable
+            style: const TextStyle(color: Colors.greenAccent, fontSize: 12),
+            overflow: TextOverflow.ellipsis,
+          ),
+      ],
     );
   }
 
@@ -1170,6 +1460,51 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   List<Widget> _buildOptionFields() {
+    // NEW: Conditional rendering
+    if (_selectedQuestionType == QuestionType.trueFalse) {
+      return [
+        const Text('Correct Answer:',
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+                fontFamily: 'PressStart2P')),
+        // True/False correct option handled by the radio group below
+      ];
+    }
+
+    if (_selectedQuestionType == QuestionType.fillInTheBlank ||
+        _selectedQuestionType == QuestionType.shortAnswer) {
+      return [
+        const Text('Correct Answer Text', // <--- Modified label
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: Colors.white,
+                fontFamily: 'PressStart2P')),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: TextFormField(
+            controller: _option1Controller, // Reuse controller for correct answer
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+                labelText: _selectedQuestionType == QuestionType.fillInTheBlank
+                    ? 'Fill-in Text'
+                    : 'Short Answer Text',
+                labelStyle: const TextStyle(color: Colors.white70),
+                border: const OutlineInputBorder(),
+                enabledBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.grey.shade600)),
+                focusedBorder: const OutlineInputBorder(
+                    borderSide: BorderSide(color: Colors.greenAccent))),
+            validator: (value) =>
+                value!.isEmpty ? 'Please enter the correct answer' : null,
+          ),
+        ),
+      ];
+    }
+
+    // Default: Multiple Choice
     final controllers = [
       _option1Controller,
       _option2Controller,
@@ -1198,6 +1533,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildRadioGroup() {
+   // NEW: Only display radio group for Multiple Choice and True/False
+    if (_selectedQuestionType == QuestionType.fillInTheBlank ||
+        _selectedQuestionType == QuestionType.shortAnswer) {
+      return const SizedBox.shrink();
+    }
+
+    // Determine the list of options for the radio buttons
+    List<String> radioOptions;
+    if (_selectedQuestionType == QuestionType.trueFalse) {
+      radioOptions = ['True', 'False'];
+    } else {
+      // Multiple Choice
+      radioOptions = ['Option 1', 'Option 2', 'Option 3', 'Option 4'];
+    }
+
     return ValueListenableBuilder<int?>(
       valueListenable: _correctOption,
       builder: (context, selected, child) {
@@ -1209,9 +1559,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             _correctOption.value = value;
           },
           child: Column(
-            children: List.generate(4, (index) {
+            children: List.generate(radioOptions.length, (index) { // <--- MODIFIED size
               return RadioListTile<int>(
-                title: Text('Option ${index + 1}',
+                title: Text(radioOptions[index], // <--- MODIFIED title
                     style: const TextStyle(color: Colors.white)),
                 value: index,
                 // groupValue and onChanged are now managed by RadioGroup

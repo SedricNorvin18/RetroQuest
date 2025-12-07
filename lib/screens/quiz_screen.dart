@@ -23,6 +23,8 @@ class _QuizScreenState extends State<QuizScreen> {
   int _correctAnswers = 0;
   int _incorrectAnswers = 0;
   String? _selectedAnswer;
+  final TextEditingController _textController = TextEditingController();
+  final FocusNode _textFocusNode = FocusNode(); // <--- ADD THIS
   bool _isAnswered = false;
   String? _teacherId;
   Timer? _timer;
@@ -42,6 +44,8 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _textController.dispose();
+    _textFocusNode.dispose(); // <--- ADD THIS
     super.dispose();
   }
 
@@ -56,7 +60,8 @@ class _QuizScreenState extends State<QuizScreen> {
         if (_countdown > 0) {
           setState(() {
             _countdown--;
-          });
+          }
+          );
         } else {
           _timer?.cancel();
           _answerQuestion(""); // Timeout
@@ -79,14 +84,14 @@ class _QuizScreenState extends State<QuizScreen> {
     return fetched;
   }
 
-  void _answerQuestion(String selectedOption) {
+  void _answerQuestion(String answer) {
     if (_isAnswered) return;
     _timer?.cancel();
 
     setState(() {
-      _selectedAnswer = selectedOption;
+      _selectedAnswer = answer;
       _isAnswered = true;
-      if (selectedOption == _questions[_currentIndex].correctAnswer) {
+      if (answer.toLowerCase() == _questions[_currentIndex].correctAnswer.toLowerCase()) {
         _score += 10;
         _correctAnswers++;
       } else {
@@ -126,8 +131,12 @@ class _QuizScreenState extends State<QuizScreen> {
         _currentIndex++;
         _selectedAnswer = null;
         _isAnswered = false;
+        _textController.clear();
       });
       _startTimer();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _textFocusNode.requestFocus();
+      });
     } else {
       // End of the quiz
       _submitQuiz();
@@ -157,6 +166,145 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     return Icons.radio_button_unchecked;
   }
+
+  Widget _buildOptionButton(String option) {
+    return GestureDetector(
+      onTap: () => _answerQuestion(option),
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.all(15),
+        decoration: BoxDecoration(
+          color: _getOptionColor(option),
+          borderRadius: BorderRadius.circular(15),
+          border: Border.all(
+            color: _isAnswered
+                ? _getOptionColor(option)
+                : Colors.grey.shade600,
+            width: 2,
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              _getOptionIcon(option),
+              color: Colors.white,
+            ),
+            const SizedBox(width: 15),
+            Expanded(
+              child: Text(
+                option,
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuestionWidget(Question question) {
+    // 1. Initialize list to hold image and answers
+    final List<Widget> widgets = [];
+
+    // 2. Add Image Display Logic (if URL exists)
+    if (question.imageUrl != null && question.imageUrl!.isNotEmpty) {
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 20.0),
+          child: Container(
+            // FIX: Use BoxConstraints.expand to ensure the widget uses the available width
+            constraints: const BoxConstraints(maxHeight: 200, maxWidth: double.infinity),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Colors.greenAccent, width: 2),
+              color: const Color(0xFF2A314D), // Add background color for padding effect
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(13),
+              child: Image.network(
+                question.imageUrl!,
+                // FIX: Use BoxFit.contain to show the entire image and respect the box constraints
+                fit: BoxFit.contain, 
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Center(
+                    child: CircularProgressIndicator(
+                      color: Colors.greenAccent,
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) => 
+                    const Center(child: Icon(Icons.broken_image, color: Colors.redAccent)),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // 3. Add Answer Controls based on Question Type
+    switch (question.questionType) {
+      case QuestionType.trueFalse:
+        // Use the new helper for both True and False options
+        widgets.addAll([
+          _buildOptionButton('True'),
+          _buildOptionButton('False'),
+        ]);
+        break;
+
+      case QuestionType.fillInTheBlank:
+      case QuestionType.shortAnswer:
+        // Add text field and submit button
+        widgets.addAll([
+          TextField(
+            controller: _textController,
+            focusNode: _textFocusNode,
+            enabled: !_isAnswered,
+            decoration: InputDecoration(
+              hintText: 'Type your answer here',
+              hintStyle: const TextStyle(color: Colors.white70),
+              filled: true,
+              fillColor: const Color(0xFF2A314D),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(15),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            style: const TextStyle(color: Colors.white),
+          ),
+          const SizedBox(height: 20),
+          if (_isAnswered)
+            Text(
+              'Correct Answer: ${question.correctAnswer}',
+              style: const TextStyle(color: Colors.greenAccent),
+            ),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _isAnswered ? null : () => _answerQuestion(_textController.text),
+            child: const Text('Submit'),
+          ),
+        ]);
+        break;
+
+      case QuestionType.multipleChoice:
+        // Use the new helper for all options
+        widgets.addAll(question.options.map((option) {
+          return _buildOptionButton(option);
+        }).toList());
+        break;
+    }
+
+    // 4. Return Column containing all collected widgets (Image + Answers)
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: widgets,
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -271,45 +419,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         const SizedBox(height: 30),
                         Expanded(
-                          child: ListView.builder(
-                            itemCount: currentQuestion.options.length,
-                            itemBuilder: (context, index) {
-                              final option = currentQuestion.options[index];
-                              return GestureDetector(
-                                onTap: () => _answerQuestion(option),
-                                child: Container(
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 8),
-                                  padding: const EdgeInsets.all(15),
-                                  decoration: BoxDecoration(
-                                    color: _getOptionColor(option),
-                                    borderRadius: BorderRadius.circular(15),
-                                    border: Border.all(
-                                      color: _isAnswered
-                                          ? _getOptionColor(option)
-                                          : Colors.grey.shade600,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        _getOptionIcon(option),
-                                        color: Colors.white,
-                                      ),
-                                      const SizedBox(width: 15),
-                                      Expanded(
-                                        child: Text(
-                                          option,
-                                          style: textTheme.bodyLarge
-                                              ?.copyWith(color: Colors.white),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+                          child: SingleChildScrollView( // Added SingleChildScrollView
+                            child: _buildQuestionWidget(currentQuestion),
                           ),
                         ),
                         const SizedBox(height: 20),
