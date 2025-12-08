@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:retroquest/screens/login_screen.dart';
-import 'package:retroquest/services/web_helpers.dart' if (dart.library.html) 'package:retroquest/services/web_helpers_web.dart';
+import 'package:retroquest/services/web_helpers.dart'
+    if (dart.library.html) 'package:retroquest/services/web_helpers_web.dart';
 
 class EmailVerifiedScreen extends StatefulWidget {
   final String oobCode;
@@ -136,7 +137,8 @@ class _EmailVerifiedScreenState extends State<EmailVerifiedScreen> {
               MaterialPageRoute(builder: (context) => const LoginScreen()),
             );
           },
-          child: const Text('GO TO LOGIN', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text('GO TO LOGIN',
+              style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );
@@ -146,7 +148,8 @@ class _EmailVerifiedScreenState extends State<EmailVerifiedScreen> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Icon(Icons.check_circle_outline, color: Colors.greenAccent, size: 80),
+        const Icon(Icons.check_circle_outline,
+            color: Colors.greenAccent, size: 80),
         const SizedBox(height: 20),
         const Text(
           'Email Verified!',
@@ -170,7 +173,7 @@ class _EmailVerifiedScreenState extends State<EmailVerifiedScreen> {
         ),
         const SizedBox(height: 30),
         ElevatedButton(
-           style: ElevatedButton.styleFrom(
+          style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 28),
             backgroundColor: Colors.grey[800],
             foregroundColor: Colors.white,
@@ -180,7 +183,8 @@ class _EmailVerifiedScreenState extends State<EmailVerifiedScreen> {
               closeWindow();
             }
           },
-          child: const Text('CLOSE', style: TextStyle(fontWeight: FontWeight.bold)),
+          child: const Text('CLOSE',
+              style: TextStyle(fontWeight: FontWeight.bold)),
         ),
       ],
     );

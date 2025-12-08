@@ -24,8 +24,7 @@ class FirestoreService {
     return _db.collection('users').doc(uid).get();
   }
 
-  Future<void> updateUserProfile(
-      String uid, Map<String, dynamic> data) async {
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     return _db.collection('users').doc(uid).update(data);
   }
 

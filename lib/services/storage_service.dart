@@ -5,8 +5,9 @@ import 'package:flutter/foundation.dart';
 class StorageService {
   final FirebaseStorage _storage = FirebaseStorage.instance;
 
-  Future<String> uploadProfilePicture(String userId, Uint8List imageBytes,
-      String imageName, {String? mimeType}) async {
+  Future<String> uploadProfilePicture(
+      String userId, Uint8List imageBytes, String imageName,
+      {String? mimeType}) async {
     try {
       final ref = _storage.ref().child('profile_pictures/$userId/$imageName');
       final metadata = SettableMetadata(contentType: mimeType ?? 'image/jpeg');
@@ -48,5 +49,4 @@ class StorageService {
       rethrow;
     }
   }
-
 }

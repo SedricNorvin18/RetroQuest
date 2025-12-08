@@ -96,7 +96,7 @@ class AuthService {
     await _auth.confirmPasswordReset(code: code, newPassword: newPassword);
   }
 
-   Future<void> applyActionCode(String code) async {
+  Future<void> applyActionCode(String code) async {
     await _auth.applyActionCode(code);
   }
 

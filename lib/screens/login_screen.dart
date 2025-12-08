@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:retroquest/screens/signup_screen.dart';
@@ -69,7 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithGoogle(forceSelectAccount: forceSelectAccount);
+      await _authService.signInWithGoogle(
+          forceSelectAccount: forceSelectAccount);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -88,99 +88,101 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _forgotPassword() async {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  _resetEmailController.text = _emailController.text.trim();
-  final resetFormKey = GlobalKey<FormState>();
+    _resetEmailController.text = _emailController.text.trim();
+    final resetFormKey = GlobalKey<FormState>();
 
-  await showDialog(
-    context: context,
-    builder: (dialogContext) {   // <-- important: use dialogContext for the dialog only
-      return AlertDialog(
-        title: const Text('Password Reset'),
-        content: Form(
-          key: resetFormKey,
-          child: TextFormField(
-            controller: _resetEmailController,
-            decoration: const InputDecoration(
-              labelText: 'Enter your email',
-              prefixIcon: Icon(Icons.email),
+    await showDialog(
+      context: context,
+      builder: (dialogContext) {
+        // <-- important: use dialogContext for the dialog only
+        return AlertDialog(
+          title: const Text('Password Reset'),
+          content: Form(
+            key: resetFormKey,
+            child: TextFormField(
+              controller: _resetEmailController,
+              decoration: const InputDecoration(
+                labelText: 'Enter your email',
+                prefixIcon: Icon(Icons.email),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Email is required';
+                }
+                if (!RegExp(
+                        r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
+                    .hasMatch(value)) {
+                  return 'Enter a valid email';
+                }
+                return null;
+              },
             ),
-            validator: (value) {
-              if (value == null || value.isEmpty) {
-                return 'Email is required';
-              }
-              if (!RegExp(
-                  r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+")
-                  .hasMatch(value)) {
-                return 'Enter a valid email';
-              }
-              return null;
-            },
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(dialogContext).pop(); // <-- use dialogContext here
-            },
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              if (resetFormKey.currentState!.validate()) {
-                Navigator.of(dialogContext).pop(); // <-- consistent
-                if (!mounted) return;
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // <-- use dialogContext here
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                if (resetFormKey.currentState!.validate()) {
+                  Navigator.of(dialogContext).pop(); // <-- consistent
+                  if (!mounted) return;
 
-                setState(() => _isLoading = true);
+                  setState(() => _isLoading = true);
 
-                try {
-                  await _authService.sendPasswordResetEmail(
-                    _resetEmailController.text.trim(),
-                  );
+                  try {
+                    await _authService.sendPasswordResetEmail(
+                      _resetEmailController.text.trim(),
+                    );
 
-                  if (!mounted) return; // <-- safe to use widget context now
+                    if (!mounted) return; // <-- safe to use widget context now
 
-                  await showDialog(
-                    context: context,   // <-- widget context (safe because mounted)
-                    builder: (context) => AlertDialog(
-                      title: const Text("Email Sent"),
-                      content: const Text(
-                        "A password reset link has been sent to your email address.",
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text("OK"),
+                    await showDialog(
+                      context:
+                          context, // <-- widget context (safe because mounted)
+                      builder: (context) => AlertDialog(
+                        title: const Text("Email Sent"),
+                        content: const Text(
+                          "A password reset link has been sent to your email address.",
                         ),
-                      ],
-                    ),
-                  );
-                } catch (e) {
-                  if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          "Failed to send reset email: ${e.toString()}",
-                        ),
-                        backgroundColor: Colors.redAccent,
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text("OK"),
+                          ),
+                        ],
                       ),
                     );
-                  }
-                } finally {
-                  if (mounted) {
-                    setState(() => _isLoading = false);
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Failed to send reset email: ${e.toString()}",
+                          ),
+                          backgroundColor: Colors.redAccent,
+                        ),
+                      );
+                    }
+                  } finally {
+                    if (mounted) {
+                      setState(() => _isLoading = false);
+                    }
                   }
                 }
-              }
-            },
-            child: const Text('Send Reset Email'),
-          ),
-        ],
-      );
-    },
-  );
-}
+              },
+              child: const Text('Send Reset Email'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -332,15 +334,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                 padding: const EdgeInsets.only(top: 8.0),
                                 child: Center(
                                   child: TextButton(
-                                    onPressed: _isLoading ? null : _forgotPassword,
+                                    onPressed:
+                                        _isLoading ? null : _forgotPassword,
                                     style: TextButton.styleFrom(
                                       padding: EdgeInsets.zero,
                                       minimumSize: const Size(0, 0),
-                                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                      tapTargetSize:
+                                          MaterialTapTargetSize.shrinkWrap,
                                     ),
                                     child: const Text(
                                       "Forgot Password?",
-                                      style: TextStyle(color: Colors.white70, fontSize: 13),
+                                      style: TextStyle(
+                                          color: Colors.white70, fontSize: 13),
                                     ),
                                   ),
                                 ),
@@ -363,7 +368,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       borderRadius: BorderRadius.circular(8),
                                     ),
                                     child: Row(
-                                      crossAxisAlignment: CrossAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       children: [
                                         if (_lastGoogleUser!['photoUrl']!
                                             .isNotEmpty)
@@ -410,7 +416,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 width: double.infinity,
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 12),
                                     backgroundColor: Colors.white,
                                     foregroundColor: Colors.black87,
                                     shape: RoundedRectangleBorder(
@@ -419,7 +426,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   onPressed: _isLoading
                                       ? null
-                                      : () => _signInWithGoogle(forceSelectAccount: true),
+                                      : () => _signInWithGoogle(
+                                          forceSelectAccount: true),
                                   child: _isLoading
                                       ? const SizedBox(
                                           width: 24,
@@ -431,10 +439,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                       : Center(
                                           child: Row(
                                             // No MainAxisAlignment.center here
-                                            mainAxisSize: MainAxisSize.min, // Keep this for minimal width
+                                            mainAxisSize: MainAxisSize
+                                                .min, // Keep this for minimal width
                                             children: [
                                               // Use a SizedBox to push content to the right
-                                              const SizedBox(width: 16), // Adjust this value to shift the logo right
+                                              const SizedBox(
+                                                  width:
+                                                      16), // Adjust this value to shift the logo right
                                               SvgPicture.asset(
                                                 'assets/images/google_logo.svg',
                                                 height: 24,
@@ -447,10 +458,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                                       : "Sign in with Google",
                                                   textAlign: TextAlign.center,
                                                   style: const TextStyle(
-                                                      fontSize: 16, fontWeight: FontWeight.bold),
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.bold),
                                                 ),
                                               ),
-                                               const SizedBox(width: 16), // Balance the initial SizedBox
+                                              const SizedBox(
+                                                  width:
+                                                      16), // Balance the initial SizedBox
                                             ],
                                           ),
                                         ),

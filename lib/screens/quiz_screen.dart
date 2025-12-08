@@ -60,8 +60,7 @@ class _QuizScreenState extends State<QuizScreen> {
         if (_countdown > 0) {
           setState(() {
             _countdown--;
-          }
-          );
+          });
         } else {
           _timer?.cancel();
           _answerQuestion(""); // Timeout
@@ -91,7 +90,8 @@ class _QuizScreenState extends State<QuizScreen> {
     setState(() {
       _selectedAnswer = answer;
       _isAnswered = true;
-      if (answer.toLowerCase() == _questions[_currentIndex].correctAnswer.toLowerCase()) {
+      if (answer.toLowerCase() ==
+          _questions[_currentIndex].correctAnswer.toLowerCase()) {
         _score += 10;
         _correctAnswers++;
       } else {
@@ -169,7 +169,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildOptionButton(String option) {
     return GestureDetector(
-      onTap: () => _answerQuestion(option),
+      onTap: _isAnswered ? null : () => _answerQuestion(option),
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
         padding: const EdgeInsets.all(15),
@@ -177,9 +177,7 @@ class _QuizScreenState extends State<QuizScreen> {
           color: _getOptionColor(option),
           borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: _isAnswered
-                ? _getOptionColor(option)
-                : Colors.grey.shade600,
+            color: _isAnswered ? _getOptionColor(option) : Colors.grey.shade600,
             width: 2,
           ),
         ),
@@ -193,7 +191,10 @@ class _QuizScreenState extends State<QuizScreen> {
             Expanded(
               child: Text(
                 option,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.white),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyLarge
+                    ?.copyWith(color: Colors.white),
               ),
             ),
           ],
@@ -209,22 +210,26 @@ class _QuizScreenState extends State<QuizScreen> {
     // 2. Add Image Display Logic (if URL exists)
     if (question.imageUrl != null && question.imageUrl!.isNotEmpty) {
       widgets.add(
+        // 🔑 SURE FIX: Apply the unique Key to the parent Container/Padding
+        // This forces Flutter to tear down and rebuild the entire image section
+        // every time _currentIndex changes.
         Padding(
+          key: ValueKey('image-section-$_currentIndex'), // 🔑 Apply Key here
           padding: const EdgeInsets.only(bottom: 20.0),
           child: Container(
-            // FIX: Use BoxConstraints.expand to ensure the widget uses the available width
-            constraints: const BoxConstraints(maxHeight: 200, maxWidth: double.infinity),
+            constraints:
+                const BoxConstraints(maxHeight: 200, maxWidth: double.infinity),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(15),
               border: Border.all(color: Colors.greenAccent, width: 2),
-              color: const Color(0xFF2A314D), // Add background color for padding effect
+              color: const Color(0xFF2A314D),
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(13),
               child: Image.network(
+                // We keep the URL, but the parent Key ensures a full rebuild
                 question.imageUrl!,
-                // FIX: Use BoxFit.contain to show the entire image and respect the box constraints
-                fit: BoxFit.contain, 
+                fit: BoxFit.contain,
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
                   return Center(
@@ -237,8 +242,8 @@ class _QuizScreenState extends State<QuizScreen> {
                     ),
                   );
                 },
-                errorBuilder: (context, error, stackTrace) => 
-                    const Center(child: Icon(Icons.broken_image, color: Colors.redAccent)),
+                errorBuilder: (context, error, stackTrace) => const Center(
+                    child: Icon(Icons.broken_image, color: Colors.redAccent)),
               ),
             ),
           ),
@@ -284,7 +289,9 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: _isAnswered ? null : () => _answerQuestion(_textController.text),
+            onPressed: _isAnswered
+                ? null
+                : () => _answerQuestion(_textController.text),
             child: const Text('Submit'),
           ),
         ]);
@@ -304,7 +311,6 @@ class _QuizScreenState extends State<QuizScreen> {
       children: widgets,
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -419,7 +425,8 @@ class _QuizScreenState extends State<QuizScreen> {
                         ),
                         const SizedBox(height: 30),
                         Expanded(
-                          child: SingleChildScrollView( // Added SingleChildScrollView
+                          child: SingleChildScrollView(
+                            // Added SingleChildScrollView
                             child: _buildQuestionWidget(currentQuestion),
                           ),
                         ),

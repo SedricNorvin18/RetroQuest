@@ -15,7 +15,6 @@ import 'package:image_picker/image_picker.dart'; // Required for image selection
 import 'package:path/path.dart' as path;
 import 'package:retroquest/services/storage_service.dart'; // For file path manipulation
 
-
 class TeacherDashboardScreen extends StatefulWidget {
   const TeacherDashboardScreen({super.key});
 
@@ -24,7 +23,6 @@ class TeacherDashboardScreen extends StatefulWidget {
 }
 
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
-
   // NEW: Initialize StorageService
   final StorageService _storageService = StorageService(); // <--- ADD THIS
   // General state
@@ -35,8 +33,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       'quizzes'; // 'quizzes', 'upload', 'questions', or 'history'
 
 // NEW: State for the question type dropdown
-  QuestionType _selectedQuestionType = QuestionType.multipleChoice; // <--- ADD THIS
-
+  QuestionType _selectedQuestionType =
+      QuestionType.multipleChoice; // <--- ADD THIS
 
   // Quiz list state
   List<Map<String, dynamic>> _subjects = [];
@@ -51,8 +49,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   final _option4Controller = TextEditingController();
   // NEW/UPDATED: Image Upload State
   Uint8List? _selectedImageBytes; // The image data (bytes)
-  String? _selectedImageName;    // The original file name
-  String? _existingImageUrl;     // URL if editing an existing question
+  String? _selectedImageName; // The original file name
+  String? _existingImageUrl; // URL if editing an existing question
   bool _isUploadingImage = false;
   final _timeLimitController =
       TextEditingController(); // Controller for the time limit
@@ -277,11 +275,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             question.options.length > 3 ? question.options[3] : '';
         _correctOption.value = question.options.indexOf(question.correctAnswer);
         _timeLimitController.text = question.timeLimit?.toString() ?? '';
-        
+
         // NEW: Populate image URL for editing
-        _selectedImageBytes = null; // <--- MAKE SURE THIS IS _selectedImageBytes
-        _selectedImageName = null;  // <--- ADD/CONFIRM THIS IS PRESENT
-        
+        _selectedImageBytes =
+            null; // <--- MAKE SURE THIS IS _selectedImageBytes
+        _selectedImageName = null; // <--- ADD/CONFIRM THIS IS PRESENT
+
         return; // done — editing wins
       }
 
@@ -331,32 +330,28 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     // NEW: Clear image state
     _selectedImageBytes = null; // <--- UPDATE THIS
-    _selectedImageName = null;  // <--- ADD THIS
+    _selectedImageName = null; // <--- ADD THIS
     _existingImageUrl = null;
     _isUploadingImage = false;
 
     // NEW: Reset the question type
     _selectedQuestionType = QuestionType.multipleChoice; // <--- ADD THIS
-
   }
 
   Future<void> _uploadQuestion() async {
-
-    
-
-
-    
     // Modify validation based on question type
-    final requiresOptions = _selectedQuestionType == QuestionType.multipleChoice ||
-        _selectedQuestionType == QuestionType.trueFalse;
-        
+    final requiresOptions =
+        _selectedQuestionType == QuestionType.multipleChoice ||
+            _selectedQuestionType == QuestionType.trueFalse;
+
     if (_formKey.currentState?.validate() != true ||
-        (requiresOptions && _correctOption.value == null)) { // <--- MODIFIED
+        (requiresOptions && _correctOption.value == null)) {
+      // <--- MODIFIED
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-              content:
-                  Text('Please fill all required fields and select a correct option.')), // <--- MODIFIED
+              content: Text(
+                  'Please fill all required fields and select a correct option.')), // <--- MODIFIED
         );
       }
       return;
@@ -370,56 +365,30 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     // Check for bytes and name
     if (_selectedImageBytes != null && _selectedImageName != null) {
-      setState(() {
-        _isUploadingImage = true;
-      });
+      setState(() => _isUploadingImage = true);
 
       try {
+        final uniqueName =
+            '${DateTime.now().millisecondsSinceEpoch}_${_selectedImageName!}';
+
         finalImageUrl = await _storageService.uploadQuestionImage(
-            _selectedImageBytes!, user.uid, _selectedImageName!); // <--- UPDATED CALL
+          _selectedImageBytes!,
+          user.uid,
+          uniqueName,
+        );
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image upload failed. Please try again.')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Image upload failed. Please try again.')));
         }
         setState(() {
           _isUploading = false;
           _isUploadingImage = false;
         });
-        return; // Stop the question upload process
+        return;
       }
 
-      setState(() {
-        _isUploadingImage = false;
-      });
-    }
-    // END NEW: Handle Image Upload
-    
-    // NEW: Handle Image Upload
-    if (_selectedImageBytes != null && _selectedImageName != null) {
-      setState(() {
-        _isUploadingImage = true;
-      });
-
-      try {
-        // Use the initialized _storageService and the new byte/name variables
-        finalImageUrl = await _storageService.uploadQuestionImage(
-            _selectedImageBytes!, user.uid, _selectedImageName!);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Image upload failed. Please try again.')));
-        }
-        setState(() {
-          _isUploading = false;
-          _isUploadingImage = false;
-        });
-        return; // Stop the question upload process
-      }
-
-      setState(() {
-        _isUploadingImage = false;
-      });
+      setState(() => _isUploadingImage = false);
     }
     // END NEW: Handle Image Upload
 
@@ -454,18 +423,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       } else if (_selectedQuestionType == QuestionType.trueFalse) {
         options = ['True', 'False'];
         correctAnswer = options[_correctOption.value!];
-      } else { // FillInTheBlank or ShortAnswer
+      } else {
+        // FillInTheBlank or ShortAnswer
         // For these types, the 'correctAnswer' is just the text from the first option/controller
         // And 'options' is typically empty or just contains the answer for simplicity in Firestore
         options = [];
-        correctAnswer = _option1Controller.text.trim(); // Use option1 for the answer field
+        correctAnswer =
+            _option1Controller.text.trim(); // Use option1 for the answer field
       }
 
       final questionData = {
         'text': _questionController.text,
         'options': options, // <--- MODIFIED
         'correctAnswer': correctAnswer, // <--- MODIFIED
-        'questionType': _selectedQuestionType.toString().split('.').last, // <--- ADD THIS
+        'questionType':
+            _selectedQuestionType.toString().split('.').last, // <--- ADD THIS
         'imageUrl': finalImageUrl, // <--- ADD/UPDATE THIS LINE
         'createdAt': FieldValue.serverTimestamp(),
         'teacherId': user.uid,
@@ -507,8 +479,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     }
   }
 
-
-Future<void> _pickImage() async {
+  Future<void> _pickImage() async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
@@ -766,8 +737,8 @@ Future<void> _pickImage() async {
               Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) => const AccountSettingsScreen()));
             } else if (value == 'profile') {
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()));
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const ProfileScreen()));
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
@@ -798,25 +769,26 @@ Future<void> _pickImage() async {
                       .collection('users')
                       .doc(_user?.uid)
                       .get(),
-                builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
-                  // if (snapshot.connectionState == ConnectionState.waiting) {
-                  //    return const Text(
-                  //       'Loading...',
-                  //       style: TextStyle(
-                  //           fontWeight: FontWeight.bold,
-                  //           fontSize: 16,
-                  //           color: Colors.white),
-                  //       overflow: TextOverflow.ellipsis,
-                  //     );
-                  // }
-                  if (snapshot.hasError ||
+                  builder: (context, AsyncSnapshot<DocumentSnapshot> snapshot) {
+                    // if (snapshot.connectionState == ConnectionState.waiting) {
+                    //    return const Text(
+                    //       'Loading...',
+                    //       style: TextStyle(
+                    //           fontWeight: FontWeight.bold,
+                    //           fontSize: 16,
+                    //           color: Colors.white),
+                    //       overflow: TextOverflow.ellipsis,
+                    //     );
+                    // }
+                    if (snapshot.hasError ||
                         !snapshot.hasData ||
                         snapshot.data?.data() == null) {
                       return Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _user?.displayName ?? 'Teacher', // NOTE: Changed 'Student' to 'Teacher'
+                            _user?.displayName ??
+                                'Teacher', // NOTE: Changed 'Student' to 'Teacher'
                             style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -841,8 +813,9 @@ Future<void> _pickImage() async {
                     String displayName = '$firstName $lastName'.trim();
 
                     if (displayName.isEmpty) {
-                      displayName =
-                          data['displayName'] ?? data['name'] ?? 'Teacher'; // NOTE: Changed 'Student' to 'Teacher'
+                      displayName = data['displayName'] ??
+                          data['name'] ??
+                          'Teacher'; // NOTE: Changed 'Student' to 'Teacher'
                     }
 
                     return Column(
@@ -1068,8 +1041,10 @@ Future<void> _pickImage() async {
                             ),
                             const SizedBox(height: 4),
                             // --- Conditional Answer Display ---
-                            if (question.questionType == QuestionType.fillInTheBlank ||
-                                question.questionType == QuestionType.shortAnswer)
+                            if (question.questionType ==
+                                    QuestionType.fillInTheBlank ||
+                                question.questionType ==
+                                    QuestionType.shortAnswer)
                               Text(
                                 'Correct Answer: "${question.correctAnswer}"',
                                 style: const TextStyle(
@@ -1079,7 +1054,8 @@ Future<void> _pickImage() async {
                                   fontSize: 14,
                                 ),
                               ),
-                            if (question.questionType == QuestionType.multipleChoice ||
+                            if (question.questionType ==
+                                    QuestionType.multipleChoice ||
                                 question.questionType == QuestionType.trueFalse)
                               ...question.options.map((option) {
                                 return Text(
@@ -1197,7 +1173,8 @@ Future<void> _pickImage() async {
                         labelStyle: const TextStyle(color: Colors.white70),
                         border: const OutlineInputBorder(),
                         enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.grey.shade600)),
+                            borderSide:
+                                BorderSide(color: Colors.grey.shade600)),
                         focusedBorder: const OutlineInputBorder(
                             borderSide: BorderSide(color: Colors.greenAccent)),
                         filled: true,
@@ -1211,13 +1188,15 @@ Future<void> _pickImage() async {
                           value: type,
                           child: Text(
                             type.toString().split('.').last.replaceAllMapped(
-                                RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}'),
+                                RegExp(r'([A-Z])'),
+                                (match) => ' ${match.group(0)}'),
                           ),
                         );
                       }).toList(),
                       onChanged: (QuestionType? newValue) {
                         setState(() {
-                          _selectedQuestionType = newValue ?? QuestionType.multipleChoice;
+                          _selectedQuestionType =
+                              newValue ?? QuestionType.multipleChoice;
                           // Clear options/answer input when changing type
                           _option1Controller.clear();
                           _option2Controller.clear();
@@ -1244,13 +1223,14 @@ Future<void> _pickImage() async {
                             focusedBorder: const OutlineInputBorder(
                                 borderSide:
                                     BorderSide(color: Colors.greenAccent))),
-                        validator: (value) =>
-                            value!.isEmpty ? 'Please enter a subject name' : null,
+                        validator: (value) => value!.isEmpty
+                            ? 'Please enter a subject name'
+                            : null,
                       ),
                     const SizedBox(height: 16),
                     if (_questionToEdit == null &&
                         _selectedSubjectForQuestions == null)
-                    const SizedBox(height: 16),
+                      const SizedBox(height: 16),
                     TextFormField(
                       controller: _questionController,
                       style: const TextStyle(color: Colors.white),
@@ -1276,18 +1256,18 @@ Future<void> _pickImage() async {
                     _buildImageUploadSection(), // <--- ADD THIS CALL
 
                     const SizedBox(height: 24), // Add separation
-                    
-                    // NEW: Conditional 'Options' label
-                    if (_selectedQuestionType == QuestionType.multipleChoice)
 
                     // NEW: Conditional 'Options' label
                     if (_selectedQuestionType == QuestionType.multipleChoice)
-                      const Text('Options',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: Colors.white,
-                              fontFamily: 'PressStart2P')),
+
+                      // NEW: Conditional 'Options' label
+                      if (_selectedQuestionType == QuestionType.multipleChoice)
+                        const Text('Options',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontFamily: 'PressStart2P')),
                     // NEW: Conditional option fields/answer fields
                     ..._buildOptionFields(),
                     const SizedBox(height: 16),
@@ -1349,7 +1329,7 @@ Future<void> _pickImage() async {
     );
   }
 
-Widget _buildImageUploadSection() {
+  Widget _buildImageUploadSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1366,7 +1346,8 @@ Widget _buildImageUploadSection() {
               const SizedBox(
                 width: 16,
                 height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.greenAccent),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.greenAccent),
               ),
           ],
         ),
@@ -1381,18 +1362,20 @@ Widget _buildImageUploadSection() {
           child: InkWell(
             onTap: _isUploadingImage ? null : _pickImage,
             child: Center(
-              child: _selectedImageBytes != null 
-                  ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover) 
+              child: _selectedImageBytes != null
+                  ? Image.memory(_selectedImageBytes!, fit: BoxFit.cover)
                   : _existingImageUrl != null
                       ? Stack(
                           alignment: Alignment.center,
                           children: [
-                            Image.network(_existingImageUrl!, fit: BoxFit.contain),
+                            Image.network(_existingImageUrl!,
+                                fit: BoxFit.contain),
                             Positioned(
                               top: 0,
                               right: 0,
                               child: IconButton(
-                                icon: const Icon(Icons.close_rounded, color: Colors.redAccent),
+                                icon: const Icon(Icons.close_rounded,
+                                    color: Colors.redAccent),
                                 onPressed: () {
                                   setState(() {
                                     _existingImageUrl = null;
@@ -1405,7 +1388,9 @@ Widget _buildImageUploadSection() {
                         )
                       : const Text(
                           'Tap to select image (Optional)',
-                          style: TextStyle(color: Colors.white70, fontStyle: FontStyle.italic),
+                          style: TextStyle(
+                              color: Colors.white70,
+                              fontStyle: FontStyle.italic),
                         ),
             ),
           ),
@@ -1485,7 +1470,8 @@ Widget _buildImageUploadSection() {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
           child: TextFormField(
-            controller: _option1Controller, // Reuse controller for correct answer
+            controller:
+                _option1Controller, // Reuse controller for correct answer
             style: const TextStyle(color: Colors.white),
             decoration: InputDecoration(
                 labelText: _selectedQuestionType == QuestionType.fillInTheBlank
@@ -1533,7 +1519,7 @@ Widget _buildImageUploadSection() {
   }
 
   Widget _buildRadioGroup() {
-   // NEW: Only display radio group for Multiple Choice and True/False
+    // NEW: Only display radio group for Multiple Choice and True/False
     if (_selectedQuestionType == QuestionType.fillInTheBlank ||
         _selectedQuestionType == QuestionType.shortAnswer) {
       return const SizedBox.shrink();
@@ -1559,7 +1545,8 @@ Widget _buildImageUploadSection() {
             _correctOption.value = value;
           },
           child: Column(
-            children: List.generate(radioOptions.length, (index) { // <--- MODIFIED size
+            children: List.generate(radioOptions.length, (index) {
+              // <--- MODIFIED size
               return RadioListTile<int>(
                 title: Text(radioOptions[index], // <--- MODIFIED title
                     style: const TextStyle(color: Colors.white)),

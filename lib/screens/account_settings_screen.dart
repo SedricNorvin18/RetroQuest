@@ -64,7 +64,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         final mimeType = pickedFile.mimeType;
 
         String downloadUrl = await _storageService.uploadProfilePicture(
-            _user!.uid, imageBytes, imageName, mimeType: mimeType);
+            _user!.uid, imageBytes, imageName,
+            mimeType: mimeType);
 
         await _user!.updatePhotoURL(downloadUrl);
         await _firestoreService.updateUserProfile(_user!.uid, {
@@ -115,8 +116,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-                content: Text(
-                    'Verification email sent. Please check your inbox.')),
+                content:
+                    Text('Verification email sent. Please check your inbox.')),
           );
         }
       }
@@ -203,8 +204,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
             backgroundColor: const Color(0xFF1E2336),
             title: const Text(
               'Change Password',
-              style: TextStyle(
-                  fontFamily: 'PressStart2P', color: Colors.white),
+              style: TextStyle(fontFamily: 'PressStart2P', color: Colors.white),
             ),
             content: TextFormField(
               controller: _passwordController,
@@ -277,9 +277,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                                   color: Colors.white,
                                   fontFamily: 'PressStart2P'),
                               decoration: _inputDecoration('Full Name'),
-                              validator: (value) => value!.isEmpty
-                                  ? 'Please enter a name'
-                                  : null,
+                              validator: (value) =>
+                                  value!.isEmpty ? 'Please enter a name' : null,
                             ),
                             const SizedBox(height: 16),
                             TextFormField(
@@ -310,7 +309,8 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                             OutlinedButton(
                               onPressed: _showChangePasswordDialog,
                               style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Colors.greenAccent),
+                                side:
+                                    const BorderSide(color: Colors.greenAccent),
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(double.infinity, 50),
                                 textStyle: const TextStyle(

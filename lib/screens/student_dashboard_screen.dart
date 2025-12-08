@@ -7,8 +7,8 @@ import 'package:retroquest/screens/leaderboard_screen.dart';
 import 'package:retroquest/screens/profile_screen.dart';
 import 'package:retroquest/screens/quiz_screen.dart';
 import 'package:retroquest/screens/teacher_subjects_screen.dart';
-import 'package:retroquest/services/firestore_service.dart'; 
-import 'package:retroquest/models/enrolled_student.dart'; 
+import 'package:retroquest/services/firestore_service.dart';
+import 'package:retroquest/models/enrolled_student.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -197,8 +197,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               Navigator.of(context).push(MaterialPageRoute(
                   builder: (context) => const AccountSettingsScreen()));
             } else if (value == 'profile') {
-              Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const ProfileScreen()));
+              Navigator.of(context).push(MaterialPageRoute(
+                  builder: (context) => const ProfileScreen()));
             }
           },
           itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
