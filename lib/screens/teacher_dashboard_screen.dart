@@ -273,13 +273,30 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             question.options.length > 2 ? question.options[2] : '';
         _option4Controller.text =
             question.options.length > 3 ? question.options[3] : '';
-        _correctOption.value = question.options.indexOf(question.correctAnswer);
+        
+        // --- START FIX/UPDATE: Handle question type and options for non-MC/TF types ---
+        _selectedQuestionType = question.questionType; // <--- ADD THIS LINE
+        
+        if (question.questionType == QuestionType.multipleChoice || 
+            question.questionType == QuestionType.trueFalse) {
+          _correctOption.value = question.options.indexOf(question.correctAnswer);
+        } else {
+          // For FillInTheBlank and ShortAnswer, the correct answer is stored in 'correctAnswer'
+          // and should be placed into the first option field (_option1Controller)
+          _option1Controller.text = question.correctAnswer;
+          _correctOption.value = null; // No radio button selection needed
+        }
+        // --- END FIX/UPDATE ---
+
         _timeLimitController.text = question.timeLimit?.toString() ?? '';
 
         // NEW: Populate image URL for editing
         _selectedImageBytes =
             null; // <--- MAKE SURE THIS IS _selectedImageBytes
         _selectedImageName = null; // <--- ADD/CONFIRM THIS IS PRESENT
+
+        // CRITICAL UPDATE: Retain existing image URL if present when editing
+        _existingImageUrl = question.imageUrl; // <--- ADD/UPDATE THIS LINE
 
         return; // done — editing wins
       }
@@ -628,6 +645,57 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       batch.update(docRef, {'order': i});
     }
     await batch.commit();
+  }
+
+  Future<void> _confirmAndDeleteQuestion(
+      Question question, String subjectId) async {
+    // 1. Show the dialog and await its result
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Question'),
+        content: const Text('Are you sure you want to delete this question?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    // CRITICAL: Check mounted after the await returns
+    if (!mounted) return;
+
+    if (confirmed == true) {
+      try {
+        // 2. Perform deletion
+        await FirebaseFirestore.instance
+            .collection('subjects')
+            .doc(subjectId)
+            .collection('questions')
+            .doc(question.id)
+            .delete();
+
+        // 3. Show success message (check mounted again, just in case)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Question deleted successfully!')),
+          );
+        }
+      } catch (e) {
+        // 4. Show error message (check mounted again)
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to delete question: $e')),
+          );
+        }
+      }
+    }
   }
 
   @override
@@ -1012,6 +1080,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               .map((doc) => Question.fromFirestore(doc))
               .toList();
 
+          // --- NEW: Empty State Check ---
+          if (questions.isEmpty) {
+            return _buildQuestionsEmptyState(); // Use a dedicated helper function
+          }
+          // --- END NEW ---
+
           return Column(
             children: [
               Expanded(
@@ -1091,12 +1165,9 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                               icon: const Icon(Icons.delete,
                                   color: Colors.pinkAccent),
                               onPressed: () {
-                                FirebaseFirestore.instance
-                                    .collection('subjects')
-                                    .doc(_selectedSubjectForQuestions)
-                                    .collection('questions')
-                                    .doc(question.id)
-                                    .delete();
+                                // Calls the new method that handles all async logic and mounted checks
+                                _confirmAndDeleteQuestion(
+                                    question, _selectedSubjectForQuestions!);
                               },
                             ),
                           ],
@@ -1127,6 +1198,32 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildQuestionsEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text(
+            'No questions yet!',
+            style: TextStyle(
+                fontSize: 24,
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'PressStart2P'),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Click the button below to add questions to the $_selectedSubjectForQuestions quiz.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 16, color: Colors.white70),
+          ),
+          const SizedBox(height: 32),
+          // The "Add Question" button is in the Column's Padding, so we omit it here
+        ],
       ),
     );
   }

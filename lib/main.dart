@@ -70,7 +70,7 @@ class MyApp extends StatelessWidget {
       create: (_) => AuthService(),
       child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: "RetroQuiz",
+          title: "RetroQuest",
           theme: ThemeData(
             primarySwatch: Colors.deepPurple,
             textTheme: GoogleFonts.pixelifySansTextTheme(
