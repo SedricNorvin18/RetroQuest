@@ -72,11 +72,17 @@ class TeacherSubjectsScreen extends StatelessWidget {
                       trailing: const Icon(Icons.arrow_forward_ios,
                           color: Colors.greenAccent),
                       onTap: () {
+                        // NOTE: You can call the QuizScreen directly here, 
+                        // but you might want to show the mode selection 
+                        // as you do in the dashboard.
+                        // For simplicity, let's navigate to the classic quiz:
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                QuizScreen(subject: subjectName),
+                            builder: (context) => QuizScreen(
+                              subject: subjectName,
+                              teacherId: teacherId, // <--- ADD THIS
+                            ),
                           ),
                         );
                       },

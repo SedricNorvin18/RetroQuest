@@ -9,7 +9,8 @@ import 'package:retroquest/screens/quiz_results_screen.dart';
 class QuizScreen extends StatefulWidget {
 
   final String subject;
-  const QuizScreen({super.key, required this.subject});
+  final String teacherId;
+  const QuizScreen({super.key, required this.subject,required this.teacherId,});
   
 
   @override

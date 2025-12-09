@@ -9,6 +9,7 @@ import 'package:retroquest/screens/quiz_screen.dart';
 import 'package:retroquest/screens/teacher_subjects_screen.dart';
 import 'package:retroquest/services/firestore_service.dart';
 import 'package:retroquest/models/enrolled_student.dart';
+import 'package:retroquest/screens/arcade_quiz_screen.dart';
 
 class StudentDashboardScreen extends StatefulWidget {
   const StudentDashboardScreen({super.key});
@@ -69,6 +70,90 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
     });
   }
 
+  void _showQuizModeSelection(
+    BuildContext context, String subjectName, String teacherId) {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (BuildContext bc) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF1E2336),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+          border: Border.all(color: Colors.pinkAccent, width: 2),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            const Text(
+              "SELECT MODE",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Colors.white,
+                  fontFamily: 'PressStart2P',
+                  fontSize: 14),
+            ),
+            const Divider(color: Colors.white38),
+            const SizedBox(height: 10),
+
+            // 1. Classic Quiz Button
+            ElevatedButton.icon(
+              icon: const Icon(Icons.class_outlined, color: Colors.black),
+              label: const Text('Classic Quiz'),
+              onPressed: () {
+                Navigator.pop(bc); // Close the modal
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // NOTE: QuizScreen constructor MUST be updated to accept teacherId
+                    builder: (context) => QuizScreen(
+                        subject: subjectName, teacherId: teacherId),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.greenAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(
+                    fontSize: 14, fontFamily: 'PressStart2P'),
+              ),
+            ),
+            const SizedBox(height: 15),
+
+            // 2. Arcade Mode Button
+            ElevatedButton.icon(
+              icon: const Icon(Icons.videogame_asset, color: Colors.black),
+              label: const Text('Arcade Mode (Retro Blaster)'),
+              onPressed: () {
+                Navigator.pop(bc); // Close the modal
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    // Pass subject and teacherId to the new Arcade screen
+                    builder: (context) => ArcadeQuizScreen(
+                        subject: subjectName, teacherId: teacherId), 
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.yellowAccent,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                textStyle: const TextStyle(
+                    fontSize: 14, fontFamily: 'PressStart2P'),
+              ),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      );
+    },
+  );
+}
+ 
   // Helper function to get teacher name from various possible fields
   String _getTeacherName(Map<String, dynamic>? teacherData) {
     if (teacherData == null) {
@@ -550,22 +635,17 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                       if (!context.mounted) return;
 
                       if (isEnrolled) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                QuizScreen(subject: subjectName),
-                          ),
-                        );
-                      } else {
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text(
-                                    'You must be enrolled with $teacherName to access this quiz.')),
-                          );
-                        }
-                      }
+    // Show the mode selection dialog instead of navigating directly
+    _showQuizModeSelection(context, subjectName, teacherId);
+} else {
+    if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+                content: Text(
+                    'You must be enrolled with $teacherName to access this quiz.')),
+        );
+    }
+}
                     }, // <--- END OF MODIFIED onTap
                   ),
                 );
@@ -606,7 +686,7 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => QuizScreen(subject: subjectName),
+                  builder: (context) => QuizScreen(subject: subjectName, teacherId: '',),
                 ),
               );
             },
