@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../models/quiz_attempt_model.dart';
+import 'package:retroquest/screens/quiz_results_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -557,11 +558,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
               children: subjectAttempts.map((attempt) {
                 final isSelected = _selectedAttempts.contains(attempt.id);
                 return ListTile(
-                  onTap: () {
-                    if (_isSelectionMode) {
-                      _onAttemptSelected(attempt.id, !isSelected);
-                    }
-                  },
+  onTap: () {
+  if (_isSelectionMode) {
+    _onAttemptSelected(attempt.id, !isSelected);
+  } else {
+    // Navigate to Results Screen with REAL data from history
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizResultScreen(
+          score: attempt.score.toInt(),
+          totalQuestions: attempt.totalQuestions, // Real data
+          correctAnswers: attempt.correctAnswers, // Real data
+          incorrectAnswers: attempt.incorrectAnswers, // Real data
+          attemptDetails: attempt.attemptDetails, // The detailed review list!
+        ),
+      ),
+    );
+  }
+},
                   onLongPress: () {
                     if (!_isSelectionMode) {
                       setState(() {

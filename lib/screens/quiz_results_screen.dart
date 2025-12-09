@@ -6,6 +6,8 @@ class QuizResultScreen extends StatelessWidget {
   final int totalQuestions;
   final int correctAnswers;
   final int incorrectAnswers;
+  // New field to receive detailed answers
+  final List<Map<String, dynamic>> attemptDetails;
 
   const QuizResultScreen({
     super.key,
@@ -13,6 +15,8 @@ class QuizResultScreen extends StatelessWidget {
     required this.totalQuestions,
     required this.correctAnswers,
     required this.incorrectAnswers,
+    // default to empty list if not provided to prevent errors
+    this.attemptDetails = const [], 
   });
 
   @override
@@ -129,7 +133,34 @@ class QuizResultScreen extends StatelessWidget {
                           value: totalQuestions.toString(),
                           color: Colors.lightBlueAccent,
                         ),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 30),
+                        
+                        // --- NEW REVIEW BUTTON ---
+                        if (attemptDetails.isNotEmpty) ...[
+  SizedBox(
+    width: double.infinity,
+    child: ElevatedButton.icon(
+      icon: const Icon(Icons.visibility),
+      label: const Text('Review Answers'),
+      onPressed: () => _showReviewModal(context),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Colors.blueAccent,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        textStyle: const TextStyle(
+          fontFamily: 'PressStart2P',
+          fontSize: 12,
+        ),
+      ),
+    ),
+  ),
+  const SizedBox(height: 20),
+],
+                        
+                        // Existing Buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
@@ -178,6 +209,153 @@ class QuizResultScreen extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  // Helper method to show the detailed list in a modal
+  void _showReviewModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFF1E2336),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.8,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        expand: false,
+        builder: (_, controller) {
+          return Column(
+            children: [
+              const SizedBox(height: 10),
+              Container(
+                width: 40,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey,
+                  borderRadius: BorderRadius.circular(5),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  "Answer Review",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontFamily: "PressStart2P",
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView.builder(
+                  controller: controller,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: attemptDetails.length,
+                  itemBuilder: (context, index) {
+                    final item = attemptDetails[index];
+                    final bool isCorrect = item['isCorrect'];
+                    final String question = item['question'];
+                    final String userAnswer = item['userAnswer'] == "" ? "(No Answer)" : item['userAnswer'];
+                    final String correctAnswer = item['correctAnswer'];
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.black38,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isCorrect ? Colors.greenAccent : Colors.pinkAccent,
+                          width: 1,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                isCorrect ? Icons.check_circle : Icons.cancel,
+                                color: isCorrect ? Colors.greenAccent : Colors.pinkAccent,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  "Question ${index + 1}",
+                                  style: TextStyle(
+                                    color: isCorrect ? Colors.greenAccent : Colors.pinkAccent,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: "PressStart2P",
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            question,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          const Divider(color: Colors.white24),
+                          const SizedBox(height: 8),
+                          RichText(
+                            text: TextSpan(
+                              style: const TextStyle(fontSize: 14, fontFamily: 'Roboto'), // Use standard font for readability
+                              children: [
+                                const TextSpan(
+                                  text: "Your Answer: ",
+                                  style: TextStyle(color: Colors.white70),
+                                ),
+                                TextSpan(
+                                  text: userAnswer,
+                                  style: TextStyle(
+                                    color: isCorrect ? Colors.greenAccent : Colors.pinkAccent,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!isCorrect) ...[
+                            const SizedBox(height: 8),
+                            RichText(
+                              text: TextSpan(
+                                style: const TextStyle(fontSize: 14, fontFamily: 'Roboto'),
+                                children: [
+                                  const TextSpan(
+                                    text: "Correct Answer: ",
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                  TextSpan(
+                                    text: correctAnswer,
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }

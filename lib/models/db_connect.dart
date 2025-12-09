@@ -9,6 +9,11 @@ class DbConnect {
     required int score,
     required String subjectId,
     required String teacherId,
+    // --- NEW ARGUMENTS ---
+    required int totalQuestions,
+    required int correctAnswers,
+    required int incorrectAnswers,
+    required List<Map<String, dynamic>> attemptDetails,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -20,6 +25,11 @@ class DbConnect {
       'subjectId': subjectId,
       'teacherId': teacherId,
       'timestamp': FieldValue.serverTimestamp(),
+      // --- SAVE NEW DATA ---
+      'totalQuestions': totalQuestions,
+      'correctAnswers': correctAnswers,
+      'incorrectAnswers': incorrectAnswers,
+      'attemptDetails': attemptDetails,
     });
   }
 

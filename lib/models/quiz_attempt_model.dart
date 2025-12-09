@@ -11,6 +11,12 @@ class QuizAttempt {
   final bool hiddenFromStudent;
   final bool hiddenFromTeacher;
 
+  // --- NEW FIELDS ---
+  final int totalQuestions;
+  final int correctAnswers;
+  final int incorrectAnswers;
+  final List<Map<String, dynamic>> attemptDetails;
+
   QuizAttempt({
     required this.id,
     required this.studentId,
@@ -21,6 +27,11 @@ class QuizAttempt {
     required this.timestamp,
     this.hiddenFromStudent = false,
     this.hiddenFromTeacher = false,
+    // Initialize new fields
+    this.totalQuestions = 0,
+    this.correctAnswers = 0,
+    this.incorrectAnswers = 0,
+    this.attemptDetails = const [],
   });
 
   factory QuizAttempt.fromFirestore(
@@ -38,6 +49,15 @@ class QuizAttempt {
       timestamp: data?['timestamp'] ?? Timestamp.now(),
       hiddenFromStudent: data?['hiddenFromStudent'] ?? false,
       hiddenFromTeacher: data?['hiddenFromTeacher'] ?? false,
+      
+      // --- MAP NEW FIELDS ---
+      totalQuestions: data?['totalQuestions'] ?? 0,
+      correctAnswers: data?['correctAnswers'] ?? 0,
+      incorrectAnswers: data?['incorrectAnswers'] ?? 0,
+      attemptDetails: (data?['attemptDetails'] as List<dynamic>?)
+              ?.map((e) => Map<String, dynamic>.from(e))
+              .toList() ??
+          [],
     );
   }
 
@@ -51,6 +71,11 @@ class QuizAttempt {
       'timestamp': timestamp,
       'hiddenFromStudent': hiddenFromStudent,
       'hiddenFromTeacher': hiddenFromTeacher,
+      // --- SAVE NEW FIELDS ---
+      'totalQuestions': totalQuestions,
+      'correctAnswers': correctAnswers,
+      'incorrectAnswers': incorrectAnswers,
+      'attemptDetails': attemptDetails,
     };
   }
 }

@@ -7,8 +7,10 @@ import 'package:retroquest/models/db_connect.dart';
 import 'package:retroquest/screens/quiz_results_screen.dart';
 
 class QuizScreen extends StatefulWidget {
+
   final String subject;
   const QuizScreen({super.key, required this.subject});
+  
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -29,6 +31,7 @@ class _QuizScreenState extends State<QuizScreen> {
   String? _teacherId;
   Timer? _timer;
   int _countdown = 0;
+  final List<Map<String, dynamic>> _userAnswers = [];
 
   @override
   void initState() {
@@ -87,11 +90,21 @@ class _QuizScreenState extends State<QuizScreen> {
     if (_isAnswered) return;
     _timer?.cancel();
 
+    final currentQuestion = _questions[_currentIndex];
+    final isCorrect = answer.toLowerCase() == currentQuestion.correctAnswer.toLowerCase();
+
+    // Store the attempt details
+    _userAnswers.add({
+      'question': currentQuestion.text,
+      'correctAnswer': currentQuestion.correctAnswer,
+      'userAnswer': answer,
+      'isCorrect': isCorrect,
+    });
+
     setState(() {
       _selectedAnswer = answer;
       _isAnswered = true;
-      if (answer.toLowerCase() ==
-          _questions[_currentIndex].correctAnswer.toLowerCase()) {
+      if (isCorrect) {
         _score += 10;
         _correctAnswers++;
       } else {
@@ -108,6 +121,10 @@ class _QuizScreenState extends State<QuizScreen> {
         score: _score,
         subjectId: widget.subject,
         teacherId: _teacherId!,
+        totalQuestions: _questions.length,
+        correctAnswers: _correctAnswers,
+        incorrectAnswers: _incorrectAnswers,
+        attemptDetails: _userAnswers,
       );
     }
 
@@ -120,6 +137,7 @@ class _QuizScreenState extends State<QuizScreen> {
           totalQuestions: _questions.length,
           correctAnswers: _correctAnswers,
           incorrectAnswers: _incorrectAnswers,
+          attemptDetails: _userAnswers, // <--- PASS THE DATA HERE
         ),
       ),
     );
