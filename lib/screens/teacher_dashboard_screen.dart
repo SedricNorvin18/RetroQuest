@@ -769,7 +769,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 _currentView == 'students') // <--- ADD THIS
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: _showQuizList,
+                onPressed: () { // <--- MODIFIED TO USE A FUNCTION
+                  if (_currentView == 'upload' && _questionToEdit != null && _selectedSubjectForQuestions != null) {
+                    // When editing a question, go back to the subject's question list
+                    _showQuestionsForSubject(_selectedSubjectForQuestions!);
+                  } else {
+                    // For all other cases (new quiz, history, students, or just viewing questions) go to quiz list
+                    _showQuizList();
+                  }
+                }, // <--- MODIFIED
               )
             : null,
       ),
@@ -1229,8 +1237,15 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildUploadForm() {
+    // Get the current screen width
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Container(
-      width: MediaQuery.of(context).size.width * 0.6, // 60% of screen width
+      // --- MODIFIED WIDTH LOGIC ---
+      width: screenWidth > 800
+          ? screenWidth * 0.6 // On web (wide screen), use 60% of width
+          : screenWidth * 0.9, // On mobile (narrow screen), use 90% of width
+      // --- END MODIFIED WIDTH LOGIC ---
       padding: const EdgeInsets.all(32.0),
       decoration: BoxDecoration(
         color: const Color.fromARGB(200, 0, 0, 0),
@@ -1404,21 +1419,78 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                     // NEW: Conditional radio group
                     _buildRadioGroup(),
                     const SizedBox(height: 32),
-                    ElevatedButton(
-                      onPressed: _uploadQuestion,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.greenAccent,
-                        foregroundColor: Colors.black,
-                        minimumSize: const Size(double.infinity, 52),
-                        textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'PressStart2P'),
+                    // NEW: Conditional Button Layout
+                    if (_questionToEdit != null)
+                      Row(
+                        children: [
+                          // NEW: Cancel Button for Edit Mode
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Navigate back to the specific subject list
+                                if (_selectedSubjectForQuestions != null) {
+                                  _showQuestionsForSubject(
+                                      _selectedSubjectForQuestions!);
+                                } else {
+                                  // Fallback: Go back to the main quiz list
+                                  _showQuizList(); 
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.pinkAccent, // Use a distinct color for Cancel
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 52),
+                                textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'PressStart2P'),
+                              ),
+                              child: const Text('Cancel'),
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          // Existing Update Button
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: _uploadQuestion,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.greenAccent,
+                                foregroundColor: Colors.black,
+                                minimumSize: const Size(double.infinity, 52),
+                                textStyle: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'PressStart2P'),
+                              ),
+                              child: const Text(
+                                'Update Question',
+                                textAlign: TextAlign.center, // Ensure centering
+                              ),
+                              // --- END MODIFIED TEXT CHILD ---
+                            ),
+                          ),
+                        ],
+                      )
+                    else
+                      // Existing Upload Button for New Quiz/Question
+                      ElevatedButton(
+                        onPressed: _uploadQuestion,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.greenAccent,
+                          foregroundColor: Colors.black,
+                          minimumSize: const Size(double.infinity, 52),
+                          textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'PressStart2P'),
+                        ),
+                        // --- MODIFIED TEXT CHILD ---
+                        child: const Text(
+                          'Upload Question',
+                          textAlign: TextAlign.center, // Ensure centering
+                        ),
+                        // --- END MODIFIED TEXT CHILD ---
                       ),
-                      child: Text(_questionToEdit != null
-                          ? 'Update Question'
-                          : 'Upload Question'),
-                    ),
                   ],
                 ),
               ),
