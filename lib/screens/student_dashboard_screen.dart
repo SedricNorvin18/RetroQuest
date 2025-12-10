@@ -103,11 +103,10 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
               icon: const Icon(Icons.class_outlined, color: Colors.black),
               label: const Text('Classic Quiz'),
               onPressed: () {
-                Navigator.pop(bc); // Close the modal
+                Navigator.pop(bc);
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    // NOTE: QuizScreen constructor MUST be updated to accept teacherId
                     builder: (context) => QuizScreen(
                         subject: subjectName, teacherId: teacherId),
                   ),
@@ -118,39 +117,68 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 foregroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 textStyle: const TextStyle(
-                    fontSize: 14, fontFamily: 'PressStart2P'),
+                    fontSize: 12, fontFamily: 'PressStart2P'),
               ),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 20),
+            
+            const Text(
+              "RETRO BLASTER (ARCADE)",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  color: Colors.yellowAccent,
+                  fontFamily: 'PressStart2P',
+                  fontSize: 10),
+            ),
+            const SizedBox(height: 10),
 
-            // 2. Arcade Mode Button
-            ElevatedButton.icon(
-              icon: const Icon(Icons.videogame_asset, color: Colors.black),
-              label: const Text('Arcade Mode (Retro Blaster)'),
-              onPressed: () {
-                Navigator.pop(bc); // Close the modal
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    // Pass subject and teacherId to the new Arcade screen
-                    builder: (context) => ArcadeQuizScreen(
-                        subject: subjectName, teacherId: teacherId), 
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.yellowAccent,
-                foregroundColor: Colors.black,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                textStyle: const TextStyle(
-                    fontSize: 14, fontFamily: 'PressStart2P'),
-              ),
+            // 2. Arcade Difficulty Buttons
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildDifficultyButton(context, 'Easy', Colors.green, subjectName, teacherId),
+                const SizedBox(width: 8),
+                _buildDifficultyButton(context, 'Normal', Colors.orange, subjectName, teacherId),
+                const SizedBox(width: 8),
+                _buildDifficultyButton(context, 'Hard', Colors.red, subjectName, teacherId),
+              ],
             ),
             const SizedBox(height: 20),
           ],
         ),
       );
     },
+  );
+}
+
+// Helper widget for difficulty buttons
+Widget _buildDifficultyButton(BuildContext context, String level, Color color, String subject, String teacherId) {
+  return Expanded(
+    child: ElevatedButton(
+      onPressed: () {
+        Navigator.pop(context); // Close modal
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ArcadeQuizScreen(
+                subject: subject, 
+                teacherId: teacherId, 
+                difficulty: level // Pass the selected difficulty
+            ), 
+          ),
+        );
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      child: Text(
+        level,
+        style: const TextStyle(fontFamily: 'PressStart2P', fontSize: 10),
+      ),
+    ),
   );
 }
  
