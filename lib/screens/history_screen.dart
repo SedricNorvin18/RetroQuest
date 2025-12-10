@@ -602,9 +602,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               'Unknown Teacher',
                       style: const TextStyle(
                           fontWeight: FontWeight.bold, color: Colors.white)),
-                  subtitle: Text(
-                    'Score: ${attempt.score} | ${DateFormat.yMd().add_jm().format(attempt.timestamp.toDate())}',
-                    style: const TextStyle(color: Colors.white70),
+                  subtitle: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, // Use space between for maximum separation
+                    children: [
+                      Text(
+                        'Score: ${attempt.score}',
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                      Text(
+                        DateFormat.yMd().add_jm().format(attempt.timestamp.toDate()),
+                        style: const TextStyle(color: Colors.white70),
+                      ),
+                    ],
                   ),
                   trailing: !_isSelectionMode
                       ? IconButton(
