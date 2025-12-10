@@ -38,6 +38,12 @@ class ArcadeQuizScreen extends StatefulWidget {
 }
 
 class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProviderStateMixin {
+  Timer? _fireTimer;
+  Timer? _movementTimer;
+  double _currentMovementDelta = 0.0; // The direction/magnitude of movement
+
+// For movement, use a small, fast step
+  final double _movementStep = 0.02;
   final DbConnect _db = DbConnect();
   List<Question> _questions = [];
   int _currentIndex = 0;
@@ -75,6 +81,21 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
   @override
   void initState() {
     super.initState();
+
+AudioPlayer.global.setAudioContext(
+    AudioContext(
+      android: const AudioContextAndroid(
+        contentType: AndroidContentType.music,
+        usageType: AndroidUsageType.game,
+        audioFocus: AndroidAudioFocus.none,
+      ),
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.multiRoute,
+        options: const { AVAudioSessionOptions.mixWithOthers },
+      ),
+    ),
+  );
+
     _initializeAudioPlayers();
     _setDifficulty();
     _loadQuestions();
@@ -88,19 +109,40 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
         Tween<double>(begin: 0.0, end: 1.0).animate(_backgroundController);
   }
 
-  void _initializeAudioPlayers() {
+  // Made async so we can set player modes and start music safely.
+  Future<void> _initializeAudioPlayers() async {
     _backgroundMusicPlayer = AudioPlayer();
     _sfxPlayer = AudioPlayer();
+
+    // No need to set a PlayerMode for BGM — ReleaseMode.loop is sufficient.
+// Keep the SFX player low-latency for snappy sound effects.
+try {
+  await _sfxPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+} catch (_) {}
+
+    // Start background music (non-blocking)
     _playBackgroundMusic();
   }
 
   Future<void> _playBackgroundMusic() async {
-    await _backgroundMusicPlayer.setReleaseMode(ReleaseMode.loop);
-    await _backgroundMusicPlayer.play(AssetSource('audio/arcade_music.mp3'));
+    try {
+      await _backgroundMusicPlayer.setReleaseMode(ReleaseMode.loop);
+      // Use AssetSource to play packaged asset
+      await _backgroundMusicPlayer.play(AssetSource('audio/arcade_music.mp3'));
+    } catch (e) {
+      // Fail silently so missing asset won't crash the game
+      // You can log or show debug message in development
+      // debugPrint('BGM play error: $e');
+    }
   }
 
   Future<void> _playSfx(String asset) async {
-    await _sfxPlayer.play(AssetSource('audio/$asset'), mode: PlayerMode.lowLatency);
+    try {
+      // Use lowLatency mode for snappy SFX playback; this won't interrupt the BGM player.
+      await _sfxPlayer.play(AssetSource('audio/$asset'), mode: PlayerMode.mediaPlayer);
+    } catch (e) {
+      // debugPrint('SFX play error: $e');
+    }
   }
 
   void _setDifficulty() {
@@ -122,8 +164,18 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
   void dispose() {
     _gameTimer?.cancel();
     _spawnTimer?.cancel();
+
+    // stop then dispose players to be safe
+    try {
+      _backgroundMusicPlayer.stop();
+    } catch (_) {}
+    try {
+      _sfxPlayer.stop();
+    } catch (_) {}
+
     _backgroundMusicPlayer.dispose();
     _sfxPlayer.dispose();
+
     _backgroundController.dispose();
     super.dispose();
   }
@@ -399,12 +451,33 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
 
   void _moveShip(double deltaX) {
     setState(() {
-      _shipPositionX = (_shipPositionX + deltaX).clamp(0.1, 0.9);
+      _shipPositionX = (_shipPositionX + deltaX).clamp(0.05, 0.95);
       if (!_isShooting) {
         _projectilePositionX = _shipPositionX;
       }
     });
   }
+
+  void _startMoving(double deltaX) {
+  _currentMovementDelta = deltaX;
+  
+  // Prevent starting a new timer if one is already running
+  if (_movementTimer != null && _movementTimer!.isActive) return;
+
+  _movementTimer = Timer.periodic(
+    const Duration(milliseconds: 50), // Adjust this duration for speed
+    (timer) {
+      if (_currentMovementDelta != 0.0) {
+        _moveShip(_currentMovementDelta);
+      }
+    },
+  );
+}
+
+  void _stopMoving() {
+  _currentMovementDelta = 0.0;
+  _movementTimer?.cancel();
+}
 
   void _fireProjectile() {
     if (_isShooting || _isGameOver) return;
@@ -413,8 +486,28 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
       _projectilePositionX = _shipPositionX;
       _projectilePositionY = _shipPositionY + 0.01;
     });
-    _playSfx('laser_shot.mp3');
+    _playSfx('laser_shot.wav');
   }
+
+  void _startRapidFire() {
+  // Check if a rapid fire timer is already active to prevent duplicates
+  if (_fireTimer != null && _fireTimer!.isActive) return;
+
+  // Set the fire rate: e.g., fire every 150 milliseconds
+  const Duration fireRate = Duration(milliseconds: 150); 
+  
+  _fireTimer = Timer.periodic(
+    fireRate, 
+    (timer) {
+      // Call the existing fire logic
+      _fireProjectile();
+    },
+  );
+}
+
+  void _stopRapidFire() {
+  _fireTimer?.cancel();
+}
 
   Future<void> _submitQuiz() async {
     final totalQuestions = _questions.length;
@@ -631,8 +724,10 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         GestureDetector(
-          onTap: () => _moveShip(-0.1),
-          child: Container(
+          onTap: () => _moveShip(-_movementStep), // Single tap move
+        onLongPressStart: (_) => _startMoving(-_movementStep), // Hold to start continuous movement left
+        onLongPressEnd: (_) => _stopMoving(), // Release to stop
+        child: Container(
             padding: const EdgeInsets.all(15),
             decoration: const BoxDecoration(
               color: Colors.blueAccent,
@@ -642,8 +737,16 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
           ),
         ),
         GestureDetector(
-          onTap: _fireProjectile,
-          child: Container(
+  // Use onLongPressStart to begin rapid fire as soon as the button is pressed
+  onLongPressStart: (_) => _startRapidFire(),
+  
+  // Use onLongPressEnd to stop rapid fire when the button is released
+  onLongPressEnd: (_) => _stopRapidFire(),
+  
+  // You can keep onTap to allow for a single quick shot if they just tap and release
+  onTap: _fireProjectile, 
+  
+  child: Container(
             padding: const EdgeInsets.all(25),
             decoration: const BoxDecoration(
               color: Colors.pinkAccent,
@@ -657,8 +760,10 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
           ),
         ),
         GestureDetector(
-          onTap: () => _moveShip(0.1),
-          child: Container(
+          onTap: () => _moveShip(_movementStep), // Single tap move
+        onLongPressStart: (_) => _startMoving(_movementStep), // Hold to start continuous movement right
+        onLongPressEnd: (_) => _stopMoving(), // Release to stop
+        child: Container(
             padding: const EdgeInsets.all(15),
             decoration: const BoxDecoration(
               color: Colors.blueAccent,
