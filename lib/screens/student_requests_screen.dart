@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:retroquest/models/enrollment_request.dart';
@@ -71,55 +72,89 @@ class StudentRequestsScreen extends StatelessWidget {
               itemCount: requests.length,
               itemBuilder: (context, index) {
                 final request = requests[index];
-                return Card(
-                  color: const Color(0xFF2A2D49).withValues(alpha: .8),
-                  elevation: 4,
-                  margin: const EdgeInsets.symmetric(vertical: 8),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    side: BorderSide(
-                      color: _getStatusColor(request.status).withValues(alpha: .7),
-                      width: 1,
-                    ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'To: ${request.teacherEmail}',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Status: ${request.status.toUpperCase()}',
-                                style: TextStyle(
-                                  fontFamily: 'PressStart2P',
-                                  fontSize: 10,
-                                  color: _getStatusColor(request.status),
-                                ),
-                              ),
-                            ],
-                          ),
+                return FutureBuilder<DocumentSnapshot>(
+                  future: firestoreService.getUserProfile(request.teacherUid),
+                  builder: (context, teacherSnapshot) {
+                    String teacherName = request.teacherEmail;
+                    String? teacherPhotoUrl;
+
+                    if (teacherSnapshot.connectionState ==
+                            ConnectionState.done &&
+                        teacherSnapshot.hasData &&
+                        teacherSnapshot.data!.exists) {
+                      final teacherData =
+                          teacherSnapshot.data!.data() as Map<String, dynamic>?;
+                      teacherName =
+                          teacherData?['displayName'] ?? request.teacherEmail;
+                      teacherPhotoUrl = teacherData?['photoURL'] ??
+                          teacherData?['profilePicUrl'];
+                    }
+
+                    return Card(
+                      color: const Color(0xFF2A2D49).withValues(alpha: 0.8),
+                      elevation: 4,
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        side: BorderSide(
+                          color: _getStatusColor(request.status)
+                              .withValues(alpha: 0.7),
+                          width: 1,
                         ),
-                        Icon(
-                          _getStatusIcon(request.status),
-                          color: _getStatusColor(request.status),
-                          size: 32,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            CircleAvatar(
+                              radius: 20,
+                              backgroundColor: Colors.pinkAccent,
+                              backgroundImage: (teacherPhotoUrl != null &&
+                                      teacherPhotoUrl.isNotEmpty)
+                                  ? NetworkImage(teacherPhotoUrl)
+                                  : null,
+                              child: (teacherPhotoUrl == null ||
+                                      teacherPhotoUrl.isEmpty)
+                                  ? const Icon(Icons.person, size: 22)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'To: $teacherName',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    'Status: ${request.status.toUpperCase()}',
+                                    style: TextStyle(
+                                      fontFamily: 'PressStart2P',
+                                      fontSize: 10,
+                                      color: _getStatusColor(request.status),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              _getStatusIcon(request.status),
+                              color: _getStatusColor(request.status),
+                              size: 32,
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             );

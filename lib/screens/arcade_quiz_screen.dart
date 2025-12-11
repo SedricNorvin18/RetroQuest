@@ -45,7 +45,7 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
 
 // --- CONSTANTS ---
   static const double kShipWidth = 125.0; // The visual width of the ship
-  static const double kShipHeight = 200.0; // The visual height of the ship
+  static const double kShipHeight = 125.0; // The visual height of the ship
 
 // For movement, use a small, fast step
   final double _movementStep = 0.02;
