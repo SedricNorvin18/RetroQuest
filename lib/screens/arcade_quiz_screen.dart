@@ -43,6 +43,10 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
   Timer? _movementTimer;
   double _currentMovementDelta = 0.0; // The direction/magnitude of movement
 
+// --- CONSTANTS ---
+  static const double kShipWidth = 125.0; // The visual width of the ship
+  static const double kShipHeight = 200.0; // The visual height of the ship
+
 // For movement, use a small, fast step
   final double _movementStep = 0.02;
   final DbConnect _db = DbConnect();
@@ -369,46 +373,44 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
   void _checkCollision() {
     if (!_isShooting) return;
 
-    // 1. Get exact screen dimensions to make hitboxes accurate on ALL devices
     final mediaQuery = MediaQuery.of(context);
     final screenWidth = mediaQuery.size.width;
     final screenHeight = mediaQuery.size.height;
 
-    // 2. Define the VISUAL size of your target (must match _buildTargetWidget)
-    const double targetPixelWidth =
-        150.0; // The fixed width from your container
-    const double targetPixelHeight =
-        50.0; // The fixed height from your container
+    // TARGET DIMENSIONS
+    const double targetPixelWidth = 150.0;
+    const double targetPixelHeight = 50.0;
 
-    // 3. Convert pixel size to normalized coordinates (0.0 to 1.0)
+    // Normalize target dimensions
     final double targetNormalizedW = targetPixelWidth / screenWidth;
     final double targetNormalizedH = targetPixelHeight / screenHeight;
 
-    // 4. Define "forgiveness" area in pixels (e.g., 40px below the box)
+    // PROJECTILE DIMENSIONS
+    // The projectile is effectively a point in the center of the ship.
+    // We don't need the full ship width for the hitbox, just the laser point.
+    // However, we must ensure the _projectilePositionX variable represents
+    // the exact CENTER of the ship.
+
+    // "Forgiveness" area (optional, makes game feel better)
     const double forgivenessPixels = 40.0;
     final double forgivenessNormalized = forgivenessPixels / screenHeight;
 
     for (int i = 0; i < _targets.length; i++) {
       final target = _targets[i];
 
-      // 5. Calculate precise boundaries
-      // Horizontal: Center +/- half the width
+      // Calculate Boundaries
       final double targetLeftX = target.positionX - (targetNormalizedW / 2);
       final double targetRightX = target.positionX + (targetNormalizedW / 2);
-
-      // Vertical: Top is (Y + half height), Bottom is (Y - half height - forgiveness)
       final double targetTopY = target.positionY + (targetNormalizedH / 2);
       final double targetBottomY =
           target.positionY - (targetNormalizedH / 2) - forgivenessNormalized;
 
-      // 6. Check Collision
-      if (_projectilePositionY < targetTopY && // Below the top edge
-          _projectilePositionY >
-              targetBottomY && // Above the extended bottom edge
-          _projectilePositionX < targetRightX && // Left of the right edge
+      // Check Collision
+      // We check if the projectile's center (X, Y) is inside the target box
+      if (_projectilePositionY < targetTopY &&
+          _projectilePositionY > targetBottomY &&
+          _projectilePositionX < targetRightX &&
           _projectilePositionX > targetLeftX) {
-        // Right of the left edge
-
         _isShooting = false;
 
         setState(() {
@@ -656,12 +658,21 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
                   _projectilePositionX * 2 - 1,
                   1.0 - (_projectilePositionY * 2),
                 ),
-                child: Container(
-                  width: 5,
+                // FIX: Wrapper SizedBox ensures alignment matches the ship's center
+                child: SizedBox(
+                  width: kShipWidth,
                   height: 15,
-                  decoration: const BoxDecoration(
-                    color: Colors.redAccent,
-                    boxShadow: [BoxShadow(color: Colors.red, blurRadius: 8)],
+                  child: Center(
+                    child: Container(
+                      width: 5,
+                      height: 15,
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        boxShadow: [
+                          BoxShadow(color: Colors.red, blurRadius: 8)
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -676,8 +687,8 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
               ),
               child: Image.asset(
                 'assets/images/ship.gif',
-                width: 125,
-                height: 200,
+                width: kShipWidth, // Use constant
+                height: kShipHeight, // Use constant
                 fit: BoxFit.contain,
               ),
             ),
