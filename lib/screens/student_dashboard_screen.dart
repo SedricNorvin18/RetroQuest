@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:retroquest/screens/account_settings_screen.dart';
+import 'package:retroquest/screens/find_teacher_screen.dart';
 import 'package:retroquest/screens/history_screen.dart';
 import 'package:retroquest/screens/leaderboard_screen.dart';
 import 'package:retroquest/screens/profile_screen.dart';
 import 'package:retroquest/screens/quiz_screen.dart';
+import 'package:retroquest/screens/student_requests_screen.dart';
 import 'package:retroquest/screens/teacher_subjects_screen.dart';
 import 'package:retroquest/services/firestore_service.dart';
 import 'package:retroquest/models/enrolled_student.dart';
@@ -21,7 +23,7 @@ class StudentDashboardScreen extends StatefulWidget {
 class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   final User? _user = FirebaseAuth.instance.currentUser;
   String _currentView =
-      'dashboard'; // 'dashboard', 'browse', 'history', or 'leaderboard'
+      'dashboard'; // 'dashboard', 'browse', 'history', or 'leaderboard' or 'enrollments' //
   String _browseView = 'main'; // 'main', 'subjects', or 'teachers'
 
   Future<void> _logout() async {
@@ -804,7 +806,7 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
     );
   }
 
-  Widget _buildEnrollmentsView() {
+ Widget _buildEnrollmentsView() {
     final studentUid = _user?.uid;
     if (studentUid == null) {
       return const Center(
@@ -813,63 +815,126 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
                   TextStyle(color: Colors.white, fontFamily: 'PressStart2P')));
     }
 
-    // Stream for enrollments *by* studentUid (requires a new method in FirestoreService)
-    // For now, we'll fetch all and filter client-side until a proper index is added
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('enrolledStudents')
-          .where('studentUid', isEqualTo: studentUid)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
-        }
-        final enrollments = snapshot.data!.docs
-            .map((doc) => EnrolledStudent.fromFirestore(doc))
-            .toList();
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // New Button: Find a Teacher
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const FindTeacherScreen()), // Navigate to FindTeacherScreen
+              );
+            },
+            icon: const Icon(Icons.person_search, color: Colors.black),
+            label: const Text('Find a Teacher'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.yellowAccent,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  fontFamily: 'PressStart2P'),
+            ),
+          ),
+          const SizedBox(height: 16),
 
-        if (enrollments.isEmpty) {
-          return const Center(
-              child: Text('Not enrolled with any teacher.',
-                  style: TextStyle(
-                      color: Colors.white, fontFamily: 'PressStart2P')));
-        }
+          // New Button: My Requests
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) =>
+                        const StudentRequestsScreen()), // Navigate to StudentRequestsScreen
+              );
+            },
+            icon: const Icon(Icons.send, color: Colors.white),
+            label: const Text('View My Sent Requests'),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white,
+              textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  fontFamily: 'PressStart2P'),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'MY ENROLLED TEACHERS',
+            style: TextStyle(
+                color: Colors.pinkAccent,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+                fontFamily: 'PressStart2P'),
+          ),
+          const Divider(color: Colors.white38),
+          
+          // Existing StreamBuilder for Enrolled Teachers
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('enrolledStudents')
+                  .where('studentUid', isEqualTo: studentUid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return Center(child: Text('Error: ${snapshot.error}'));
+                }
+                final enrollments = snapshot.data!.docs
+                    .map((doc) => EnrolledStudent.fromFirestore(doc))
+                    .toList();
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(24.0),
-          itemCount: enrollments.length,
-          itemBuilder: (context, index) {
-            final enrollment = enrollments[index];
-            return FutureBuilder<String>(
-              future: _getTeacherDisplayName(enrollment.teacherUid),
-              builder: (context, teacherNameSnapshot) {
-                final teacherName = teacherNameSnapshot.data ?? 'Loading...';
-                return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                  color: Colors.black54,
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: ListTile(
-                    leading:
-                        const Icon(Icons.school, color: Colors.greenAccent),
-                    title: Text(teacherName,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'PressStart2P')),
-                    // subtitle: Text('Teacher ID: ${enrollment.teacherUid}',
-                    //     style: const TextStyle(color: Colors.white70)),
-                  ),
+                if (enrollments.isEmpty) {
+                  return const Center(
+                      child: Text('Not enrolled with any teacher.',
+                          style: TextStyle(
+                              color: Colors.white70, fontFamily: 'PressStart2P', fontSize: 10)));
+                }
+
+                return ListView.builder(
+                  // physics: const NeverScrollableScrollPhysics(), // Use this if you wrap it in a SingleChildScrollView
+                  itemCount: enrollments.length,
+                  itemBuilder: (context, index) {
+                    final enrollment = enrollments[index];
+                    return FutureBuilder<String>(
+                      future: _getTeacherDisplayName(enrollment.teacherUid),
+                      builder: (context, teacherNameSnapshot) {
+                        final teacherName =
+                            teacherNameSnapshot.data ?? 'Loading...';
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          color: Colors.black54,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            leading: const Icon(Icons.school,
+                                color: Colors.greenAccent),
+                            title: Text(teacherName,
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    fontFamily: 'PressStart2P')),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ],
+      ),
     );
   }
 

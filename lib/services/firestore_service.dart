@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/enrolled_student.dart'; // Import the new model
+import '../models/enrollment_request.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -130,5 +131,50 @@ class FirestoreService {
             isEqualTo:
                 teacherUid) // Assuming 'subjects' have a 'teacherUid' field
         .snapshots();
+  }
+
+  // --- New methods for enrollment requests ---
+
+  Future<void> createEnrollmentRequest({
+    required String studentUid,
+    required String teacherUid,
+    required String studentEmail,
+    required String teacherEmail,
+  }) async {
+    final requestRef = _db.collection('enrollmentRequests').doc();
+    await requestRef.set(EnrollmentRequest(
+      id: requestRef.id,
+      studentUid: studentUid,
+      teacherUid: teacherUid,
+      studentEmail: studentEmail,
+      teacherEmail: teacherEmail,
+      status: 'pending',
+    ).toFirestore());
+  }
+
+  Stream<List<EnrollmentRequest>> getPendingEnrollmentRequests(String teacherUid) {
+    return _db
+        .collection('enrollmentRequests')
+        .where('teacherUid', isEqualTo: teacherUid)
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => EnrollmentRequest.fromFirestore(doc))
+            .toList());
+  }
+
+  Future<void> updateEnrollmentRequestStatus(
+      String requestId, String status) async {
+    await _db.collection('enrollmentRequests').doc(requestId).update({'status': status});
+  }
+
+  Stream<List<EnrollmentRequest>> getEnrollmentRequestsForStudent(String studentUid) {
+    return _db
+        .collection('enrollmentRequests')
+        .where('studentUid', isEqualTo: studentUid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => EnrollmentRequest.fromFirestore(doc))
+            .toList());
   }
 }

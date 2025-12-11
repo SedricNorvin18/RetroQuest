@@ -316,7 +316,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           horizontal: 16, vertical: 12), // Adjusted vertical padding
       decoration: BoxDecoration(
         color: Colors.black
-            .withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
+            .withAlpha((0.5 * 255).round()), // Fixed deprecated withValues
         borderRadius:
             BorderRadius.circular(8), // Slightly smaller border radius
         border: Border.all(color: Colors.cyanAccent, width: 1),
@@ -392,7 +392,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             horizontal: 16, vertical: 12), // Adjusted vertical padding
         decoration: BoxDecoration(
           color: Colors.black
-              .withAlpha((0.5 * 255).round()), // Fixed deprecated withOpacity
+              .withAlpha((0.5 * 255).round()), // Fixed deprecated withValues
           borderRadius:
               BorderRadius.circular(8), // Slightly smaller border radius
           border: Border.all(color: Colors.purpleAccent, width: 1),

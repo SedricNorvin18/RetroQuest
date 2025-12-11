@@ -233,11 +233,11 @@
 //                 margin: const EdgeInsets.symmetric(horizontal: 20),
 //                 padding: const EdgeInsets.all(16),
 //                 decoration: BoxDecoration(
-//                   color: Colors.white.withAlpha(38), // Replaced withOpacity
+//                   color: Colors.white.withAlpha(38), // Replaced withValues
 //                   borderRadius: BorderRadius.circular(20),
 //                   boxShadow: [
 //                     BoxShadow(
-//                       color: Colors.black.withAlpha(51), // Replaced withOpacity
+//                       color: Colors.black.withAlpha(51), // Replaced withValues
 //                       blurRadius: 6,
 //                       offset: const Offset(2, 2),
 //                     ),
@@ -265,14 +265,14 @@
 //                     final isCorrect = option == questions[index].correctAnswer;
 
 //                     Color cardColor =
-//                         Colors.white.withAlpha(51); // Replaced withOpacity
+//                         Colors.white.withAlpha(51); // Replaced withValues
 //                     if (_selectedAnswer != null) {
 //                       if (isCorrect) {
 //                         cardColor = Colors.greenAccent
-//                             .withAlpha(204); // Replaced withOpacity
+//                             .withAlpha(204); // Replaced withValues
 //                       } else if (_selectedAnswer == option) {
 //                         cardColor = Colors.redAccent
-//                             .withAlpha(204); // Replaced withOpacity
+//                             .withAlpha(204); // Replaced withValues
 //                       }
 //                     }
 
@@ -287,7 +287,7 @@
 //                           boxShadow: [
 //                             BoxShadow(
 //                               color: Colors.black
-//                                   .withAlpha(51), // Replaced withOpacity
+//                                   .withAlpha(51), // Replaced withValues
 //                               blurRadius: 4,
 //                               offset: const Offset(2, 2),
 //                             ),

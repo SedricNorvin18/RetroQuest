@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,6 +8,8 @@ import 'package:retroquest/services/firestore_service.dart'; // <--- ADD THIS
 import 'package:retroquest/models/enrolled_student.dart'; // <--- ADD THIS
 import 'package:retroquest/screens/account_settings_screen.dart'; // <--- ADD THIS
 import 'package:retroquest/screens/profile_screen.dart'; // <--- ADD THIS
+import 'package:retroquest/models/enrollment_request.dart'; // <--- ADD THIS
+import 'package:retroquest/screens/enrollment_requests_screen.dart'; // <--- ADD THIS
 // Required for File handling
 // Required for file upload
 import 'package:image_picker/image_picker.dart'; // Required for image selection
@@ -25,6 +26,7 @@ class TeacherDashboardScreen extends StatefulWidget {
 class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   // NEW: Initialize StorageService
   final StorageService _storageService = StorageService(); // <--- ADD THIS
+  final FirestoreService _firestoreService = FirestoreService();
   // General state
   final User? _user = FirebaseAuth.instance.currentUser;
   bool _isLoading = true;
@@ -714,7 +716,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             (constraints.maxWidth < 800)
                 ? _buildMobileLayout()
                 : _buildWebLayout(),
-          ],
+                  
+          ], 
         );
       }),
     );
@@ -921,6 +924,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
         const SizedBox(height: 24),
         _buildNavSectionTitle('MANAGE'),
+        _buildEnrollmentRequestsDrawerItem(),
         _buildNavItem(Icons.people_alt_outlined, 'Students', // <--- ADD THIS
             isSelected: _currentView == 'students',
             onTap: _showStudentsView), // <--- ADD THIS
@@ -1825,6 +1829,84 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  Widget _buildDrawerItem(
+      String view, String title, IconData icon, VoidCallback onTap,
+      {int badgeCount = 0}) { // <--- MODIFIED
+    final isSelected = _currentView == view;
+
+    return Material(
+      color: isSelected ? Colors.grey.shade800 : Colors.transparent,
+      child: ListTile(
+        leading:
+            Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400),
+        title: Row( // <--- ADDED Row for badge
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                color: isSelected ? Colors.white : Colors.grey.shade400,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                fontFamily: 'PressStart2P',
+                fontSize: 12,
+              ),
+            ),
+            if (badgeCount > 0) // <--- ADDED Badge logic
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$badgeCount',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'PressStart2P',
+                  ),
+                ),
+              ),
+          ],
+        ),
+        onTap: onTap,
+        dense: true,
+      ),
+    );
+  }
+
+  Widget _buildEnrollmentRequestsDrawerItem() { // <--- ADD NEW FUNCTION
+    final teacherUid = _user?.uid;
+
+    if (teacherUid == null) {
+      return const SizedBox.shrink(); // Hide if user is null
+    }
+
+    return StreamBuilder<List<EnrollmentRequest>>(
+      stream: _firestoreService.getPendingEnrollmentRequests(teacherUid),
+      builder: (context, snapshot) {
+        int pendingCount = snapshot.data?.length ?? 0;
+
+        return _buildDrawerItem(
+          'enrollments',
+          'Enrollment Requests',
+          Icons.person_add,
+          () {
+            Navigator.of(context).pop();
+            Navigator.pushNamed(context, '/enrollment-requests'); // Close drawer
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => const EnrollmentRequestsScreen()),
+            );
+          },
+          badgeCount: pendingCount, // Pass the count for the notification badge
+        );
+      },
+    );
+  }
+
   Widget _buildLogoutButton() {
     return ListTile(
       leading: Icon(Icons.logout, color: Colors.grey.shade400),
@@ -1842,7 +1924,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 TextButton(
                   child: const Text('Cancel'),
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
+                     // Close the dialog
                   },
                 ),
                 TextButton(

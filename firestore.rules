@@ -47,10 +47,19 @@ service cloud.firestore {
     match /enrolledStudents/{enrollmentId} {
       allow read: if isUserAuthenticated() && 
                   (resource.data.studentUid == request.auth.uid || resource.data.teacherUid == request.auth.uid);
-      allow write: if isUserAuthenticated() && 
-                   request.auth.uid == request.resource.data.teacherUid;
+      allow create: if isUserAuthenticated() && 
+                    request.auth.uid == request.resource.data.teacherUid;
+      allow update: if isUserAuthenticated() && 
+                   request.auth.uid == resource.data.teacherUid;
       allow delete: if isUserAuthenticated() &&
-                    request.auth.uid == resource.data.teacherUid;
+                    (request.auth.uid == resource.data.studentUid || request.auth.uid == resource.data.teacherUid);
+    }
+
+    match /enrollmentRequests/{requestId} {
+      allow create: if request.auth != null && request.resource.data.studentUid == request.auth.uid;
+      allow read: if request.auth != null && (resource.data.teacherUid == request.auth.uid || resource.data.studentUid == request.auth.uid);
+      allow update: if request.auth != null && resource.data.teacherUid == request.auth.uid;
+      allow delete: if request.auth != null && (resource.data.teacherUid == request.auth.uid || resource.data.studentUid == request.auth.uid);
     }
   }
 }
