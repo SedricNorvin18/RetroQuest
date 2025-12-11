@@ -37,7 +37,8 @@ class ArcadeQuizScreen extends StatefulWidget {
   State<ArcadeQuizScreen> createState() => _ArcadeQuizScreenState();
 }
 
-class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProviderStateMixin {
+class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
+    with TickerProviderStateMixin {
   Timer? _fireTimer;
   Timer? _movementTimer;
   double _currentMovementDelta = 0.0; // The direction/magnitude of movement
@@ -82,19 +83,19 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen> with TickerProvider
   void initState() {
     super.initState();
 
-AudioPlayer.global.setAudioContext(
-    AudioContext(
-      android: const AudioContextAndroid(
-        contentType: AndroidContentType.music,
-        usageType: AndroidUsageType.game,
-        audioFocus: AndroidAudioFocus.none,
+    AudioPlayer.global.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.none,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.multiRoute,
+          options: const {AVAudioSessionOptions.mixWithOthers},
+        ),
       ),
-      iOS: AudioContextIOS(
-        category: AVAudioSessionCategory.multiRoute,
-        options: const { AVAudioSessionOptions.mixWithOthers },
-      ),
-    ),
-  );
+    );
 
     _initializeAudioPlayers();
     _setDifficulty();
@@ -116,9 +117,9 @@ AudioPlayer.global.setAudioContext(
 
     // No need to set a PlayerMode for BGM — ReleaseMode.loop is sufficient.
 // Keep the SFX player low-latency for snappy sound effects.
-try {
-  await _sfxPlayer.setPlayerMode(PlayerMode.mediaPlayer);
-} catch (_) {}
+    try {
+      await _sfxPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+    } catch (_) {}
 
     // Start background music (non-blocking)
     _playBackgroundMusic();
@@ -139,7 +140,8 @@ try {
   Future<void> _playSfx(String asset) async {
     try {
       // Use lowLatency mode for snappy SFX playback; this won't interrupt the BGM player.
-      await _sfxPlayer.play(AssetSource('audio/$asset'), mode: PlayerMode.mediaPlayer);
+      await _sfxPlayer.play(AssetSource('audio/$asset'),
+          mode: PlayerMode.mediaPlayer);
     } catch (e) {
       // debugPrint('SFX play error: $e');
     }
@@ -211,9 +213,7 @@ try {
             side: const BorderSide(color: Colors.pinkAccent, width: 2)),
         title: const Text("Mode Unavailable",
             style: TextStyle(
-                color: Colors.white,
-                fontFamily: "PressStart2P",
-                fontSize: 14)),
+                color: Colors.white, fontFamily: "PressStart2P", fontSize: 14)),
         content: const Text(
           "This quiz contains only text-based questions which cannot be played in Arcade Mode.\n\nPlease play Classic Mode instead.",
           style: TextStyle(color: Colors.white70),
@@ -308,7 +308,7 @@ try {
       _isGameOver = true;
       _gameTimer?.cancel();
       _spawnTimer?.cancel();
-      _playSfx('game_over.mp3');
+      _playSfx('game_over.wav');
       return;
     }
 
@@ -338,7 +338,7 @@ try {
         if (escapedTarget.isCorrect) {
           _lives--;
           _incorrectAnswers++;
-          _playSfx('explosion_lives.mp3');
+          _playSfx('explosion_lives.wav');
           _userAnswers.add({
             'question': _questions[_currentIndex].text,
             'correctAnswer': _questions[_currentIndex].correctAnswer,
@@ -350,7 +350,7 @@ try {
             _isGameOver = true;
             _gameTimer?.cancel();
             _spawnTimer?.cancel();
-            _playSfx('game_over.mp3');
+            _playSfx('game_over.wav');
             _submitQuiz();
           } else {
             _gameTimer?.cancel();
@@ -369,14 +369,46 @@ try {
   void _checkCollision() {
     if (!_isShooting) return;
 
+    // 1. Get exact screen dimensions to make hitboxes accurate on ALL devices
+    final mediaQuery = MediaQuery.of(context);
+    final screenWidth = mediaQuery.size.width;
+    final screenHeight = mediaQuery.size.height;
+
+    // 2. Define the VISUAL size of your target (must match _buildTargetWidget)
+    const double targetPixelWidth =
+        150.0; // The fixed width from your container
+    const double targetPixelHeight =
+        50.0; // The fixed height from your container
+
+    // 3. Convert pixel size to normalized coordinates (0.0 to 1.0)
+    final double targetNormalizedW = targetPixelWidth / screenWidth;
+    final double targetNormalizedH = targetPixelHeight / screenHeight;
+
+    // 4. Define "forgiveness" area in pixels (e.g., 40px below the box)
+    const double forgivenessPixels = 40.0;
+    final double forgivenessNormalized = forgivenessPixels / screenHeight;
+
     for (int i = 0; i < _targets.length; i++) {
       final target = _targets[i];
-      const targetSize = 0.15;
 
-      if (_projectilePositionY < target.positionY + targetSize / 2 &&
-          _projectilePositionY > target.positionY - targetSize / 2 &&
-          _projectilePositionX < target.positionX + targetSize / 2 &&
-          _projectilePositionX > target.positionX - targetSize / 2) {
+      // 5. Calculate precise boundaries
+      // Horizontal: Center +/- half the width
+      final double targetLeftX = target.positionX - (targetNormalizedW / 2);
+      final double targetRightX = target.positionX + (targetNormalizedW / 2);
+
+      // Vertical: Top is (Y + half height), Bottom is (Y - half height - forgiveness)
+      final double targetTopY = target.positionY + (targetNormalizedH / 2);
+      final double targetBottomY =
+          target.positionY - (targetNormalizedH / 2) - forgivenessNormalized;
+
+      // 6. Check Collision
+      if (_projectilePositionY < targetTopY && // Below the top edge
+          _projectilePositionY >
+              targetBottomY && // Above the extended bottom edge
+          _projectilePositionX < targetRightX && // Left of the right edge
+          _projectilePositionX > targetLeftX) {
+        // Right of the left edge
+
         _isShooting = false;
 
         setState(() {
@@ -396,7 +428,7 @@ try {
   void _handleCorrectAnswer(String selectedAnswer) {
     _score += 20;
     _correctAnswers++;
-    _playSfx('explosion_correct.mp3');
+    _playSfx('explosion_correct.wav');
 
     _userAnswers.add({
       'question': _questions[_currentIndex].text,
@@ -420,7 +452,7 @@ try {
   void _handleIncorrectAnswer(String selectedAnswer) {
     _lives--;
     _incorrectAnswers++;
-    _playSfx('explosion_lives.mp3');
+    _playSfx('explosion_lives.wav');
 
     _userAnswers.add({
       'question': _questions[_currentIndex].text,
@@ -433,7 +465,7 @@ try {
       _isGameOver = true;
       _gameTimer?.cancel();
       _spawnTimer?.cancel();
-      _playSfx('game_over.mp3');
+      _playSfx('game_over.wav');
       _submitQuiz();
     } else {
       _gameTimer?.cancel();
@@ -459,25 +491,25 @@ try {
   }
 
   void _startMoving(double deltaX) {
-  _currentMovementDelta = deltaX;
-  
-  // Prevent starting a new timer if one is already running
-  if (_movementTimer != null && _movementTimer!.isActive) return;
+    _currentMovementDelta = deltaX;
 
-  _movementTimer = Timer.periodic(
-    const Duration(milliseconds: 50), // Adjust this duration for speed
-    (timer) {
-      if (_currentMovementDelta != 0.0) {
-        _moveShip(_currentMovementDelta);
-      }
-    },
-  );
-}
+    // Prevent starting a new timer if one is already running
+    if (_movementTimer != null && _movementTimer!.isActive) return;
+
+    _movementTimer = Timer.periodic(
+      const Duration(milliseconds: 50), // Adjust this duration for speed
+      (timer) {
+        if (_currentMovementDelta != 0.0) {
+          _moveShip(_currentMovementDelta);
+        }
+      },
+    );
+  }
 
   void _stopMoving() {
-  _currentMovementDelta = 0.0;
-  _movementTimer?.cancel();
-}
+    _currentMovementDelta = 0.0;
+    _movementTimer?.cancel();
+  }
 
   void _fireProjectile() {
     if (_isShooting || _isGameOver) return;
@@ -490,24 +522,24 @@ try {
   }
 
   void _startRapidFire() {
-  // Check if a rapid fire timer is already active to prevent duplicates
-  if (_fireTimer != null && _fireTimer!.isActive) return;
+    // Check if a rapid fire timer is already active to prevent duplicates
+    if (_fireTimer != null && _fireTimer!.isActive) return;
 
-  // Set the fire rate: e.g., fire every 150 milliseconds
-  const Duration fireRate = Duration(milliseconds: 150); 
-  
-  _fireTimer = Timer.periodic(
-    fireRate, 
-    (timer) {
-      // Call the existing fire logic
-      _fireProjectile();
-    },
-  );
-}
+    // Set the fire rate: e.g., fire every 150 milliseconds
+    const Duration fireRate = Duration(milliseconds: 150);
+
+    _fireTimer = Timer.periodic(
+      fireRate,
+      (timer) {
+        // Call the existing fire logic
+        _fireProjectile();
+      },
+    );
+  }
 
   void _stopRapidFire() {
-  _fireTimer?.cancel();
-}
+    _fireTimer?.cancel();
+  }
 
   Future<void> _submitQuiz() async {
     final totalQuestions = _questions.length;
@@ -643,9 +675,9 @@ try {
                 1.0 - (_shipPositionY * 2),
               ),
               child: Image.asset(
-                'assets/images/ship.png',
-                width: 60,
-                height: 60,
+                'assets/images/ship.gif',
+                width: 125,
+                height: 200,
                 fit: BoxFit.contain,
               ),
             ),
@@ -675,8 +707,8 @@ try {
 
   Widget _buildTargetWidget(_Target target) {
     return Container(
-      width: 80,
-      height: 40,
+      width: 150,
+      height: 50,
       decoration: BoxDecoration(
         color: Colors.purple.withValues(alpha: 0.9),
         border: Border.all(color: Colors.pinkAccent, width: 2),
@@ -692,7 +724,7 @@ try {
           fontSize: 10,
         ),
         maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        overflow: TextOverflow.visible,
       ),
     );
   }
@@ -725,9 +757,10 @@ try {
       children: [
         GestureDetector(
           onTap: () => _moveShip(-_movementStep), // Single tap move
-        onLongPressStart: (_) => _startMoving(-_movementStep), // Hold to start continuous movement left
-        onLongPressEnd: (_) => _stopMoving(), // Release to stop
-        child: Container(
+          onLongPressStart: (_) => _startMoving(
+              -_movementStep), // Hold to start continuous movement left
+          onLongPressEnd: (_) => _stopMoving(), // Release to stop
+          child: Container(
             padding: const EdgeInsets.all(15),
             decoration: const BoxDecoration(
               color: Colors.blueAccent,
@@ -737,16 +770,16 @@ try {
           ),
         ),
         GestureDetector(
-  // Use onLongPressStart to begin rapid fire as soon as the button is pressed
-  onLongPressStart: (_) => _startRapidFire(),
-  
-  // Use onLongPressEnd to stop rapid fire when the button is released
-  onLongPressEnd: (_) => _stopRapidFire(),
-  
-  // You can keep onTap to allow for a single quick shot if they just tap and release
-  onTap: _fireProjectile, 
-  
-  child: Container(
+          // Use onLongPressStart to begin rapid fire as soon as the button is pressed
+          onLongPressStart: (_) => _startRapidFire(),
+
+          // Use onLongPressEnd to stop rapid fire when the button is released
+          onLongPressEnd: (_) => _stopRapidFire(),
+
+          // You can keep onTap to allow for a single quick shot if they just tap and release
+          onTap: _fireProjectile,
+
+          child: Container(
             padding: const EdgeInsets.all(25),
             decoration: const BoxDecoration(
               color: Colors.pinkAccent,
@@ -761,9 +794,10 @@ try {
         ),
         GestureDetector(
           onTap: () => _moveShip(_movementStep), // Single tap move
-        onLongPressStart: (_) => _startMoving(_movementStep), // Hold to start continuous movement right
-        onLongPressEnd: (_) => _stopMoving(), // Release to stop
-        child: Container(
+          onLongPressStart: (_) => _startMoving(
+              _movementStep), // Hold to start continuous movement right
+          onLongPressEnd: (_) => _stopMoving(), // Release to stop
+          child: Container(
             padding: const EdgeInsets.all(15),
             decoration: const BoxDecoration(
               color: Colors.blueAccent,
