@@ -19,6 +19,8 @@ class DungeonQuizScreen extends StatefulWidget {
   State<DungeonQuizScreen> createState() => _DungeonQuizScreenState();
 }
 
+enum GameStatus { playing, gameOver, victory }
+
 class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     with TickerProviderStateMixin {
   final DbConnect _db = DbConnect();
@@ -36,6 +38,8 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
   int _incorrectAnswers = 0;
   final List<Map<String, dynamic>> _userAnswers = [];
 
+  GameStatus _gameStatus = GameStatus.playing;
+
   // Animation State
   bool _isPlayerAttacking = false;
   bool _isEnemyAttacking = false;
@@ -47,11 +51,13 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
   static const int _secondsPerQuestion = 15; // Time to answer before hit
 
   late AudioPlayer _sfxPlayer;
+  late AudioPlayer _bgmPlayer;
 
   @override
   void initState() {
     super.initState();
     _sfxPlayer = AudioPlayer();
+    _bgmPlayer = AudioPlayer();
     _loadQuestions();
   }
 
@@ -61,6 +67,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     _textController.dispose();
     _focusNode.dispose();
     _sfxPlayer.dispose();
+    _bgmPlayer.dispose();
     super.dispose();
   }
 
@@ -81,6 +88,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
         setState(() {
           _questions = textQuestions;
           _startTurn();
+          _playBGM();
         });
       }
     }
@@ -165,13 +173,14 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     }
   }
 
-void _performPlayerAttack() {
+  void _performPlayerAttack() {
     setState(() {
       _isPlayerAttacking = true;
     });
 
     // Change this to a hero sound, e.g., 'sword_hit.wav' or 'laser.wav'
-    _sfxPlayer.play(AssetSource('audio/sword_hit.wav')); 
+    _sfxPlayer.play(AssetSource('audio/sword_hit.wav'));
+    
 
     Future.delayed(const Duration(milliseconds: 500), () {
       setState(() {
@@ -183,7 +192,7 @@ void _performPlayerAttack() {
     });
   }
 
-void _takeDamage({required bool isTimeOut}) {
+  void _takeDamage({required bool isTimeOut}) {
     setState(() {
       _isEnemyAttacking = true;
       _playerHp--;
@@ -197,13 +206,15 @@ void _takeDamage({required bool isTimeOut}) {
     });
 
     // --- FIX: Play Dragon Attack Sound Here ---
-    // Previously, this was only playing 'damage.wav'. 
+    // Previously, this was only playing 'damage.wav'.
     // Now it plays the attack sound when the timer runs out or you miss.
     _sfxPlayer.play(AssetSource('audio/dragon_attack.wav'));
+    
 
     Future.delayed(const Duration(milliseconds: 800), () {
       if (_playerHp <= 0) {
-        _endGame();
+        // Game Over condition
+        _endGame(); // <-- Ensure this is called when HP hits 0
       } else {
         setState(() {
           _isEnemyAttacking = false;
@@ -211,6 +222,15 @@ void _takeDamage({required bool isTimeOut}) {
         });
       }
     });
+  }
+
+  void _playBGM() async {
+    // Set the loop mode to play indefinitely
+    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
+
+    // Start playing the music file
+    // NOTE: Ensure 'dungeon_theme.mp3' exists in your 'assets/audio/' folder!
+    await _bgmPlayer.play(AssetSource('audio/dungeon_theme.mp3'));
   }
 
   void _nextQuestion() {
@@ -225,6 +245,27 @@ void _takeDamage({required bool isTimeOut}) {
   Future<void> _endGame() async {
     _attackTimer?.cancel();
 
+    // Determine final status
+    final status = _playerHp <= 0 ? GameStatus.gameOver : GameStatus.victory;
+
+    // 1. Set the status to show the overlay
+    setState(() {
+      _gameStatus = status;
+    });
+
+    // 2. Play win/lose sound (optional)
+    if (status == GameStatus.gameOver) {
+      _bgmPlayer.stop();
+      _sfxPlayer.play(AssetSource('audio/lose.wav'));
+    } else {
+      _bgmPlayer.stop();
+      _sfxPlayer.play(AssetSource('audio/win.wav'));
+    }
+
+    // 3. Pause for 2 seconds to let the player see the "Game Over" or "Victory" screen
+    await Future.delayed(const Duration(seconds: 2));
+
+    // 4. Save the attempt
     await _db.saveQuizAttempt(
       score: _score,
       subjectId: widget.subject,
@@ -236,6 +277,7 @@ void _takeDamage({required bool isTimeOut}) {
     );
 
     if (!mounted) return;
+    // 5. Navigate to results screen
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -254,9 +296,7 @@ void _takeDamage({required bool isTimeOut}) {
 
   @override
   Widget build(BuildContext context) {
-    if (_questions.isEmpty) {
-      return const Scaffold(backgroundColor: Colors.black);
-    }
+    if (_questions.isEmpty) return const Scaffold(backgroundColor: Colors.black);
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -290,160 +330,197 @@ void _takeDamage({required bool isTimeOut}) {
       ),
       body: Stack(
         children: [
-          // 1. BACKGROUND (Dungeon)
+          // 1. BACKGROUND (Dungeon) - Now full screen and clear
           Positioned.fill(
             child: Image.asset(
               'assets/images/dungeon.jpg',
               fit: BoxFit.fill,
-              // All coloring and opacity properties have been removed!
-              // The image will now show in its original, full clarity.
             ),
           ),
 
           // 2. DAMAGE FLASH EFFECT
           if (_isDamaged)
             Positioned.fill(
-                child: Container(color: Colors.red.withOpacity(0.3))),
+                child: Container(color: Colors.red.withValues(alpha: 0.3))),
 
-          Column(
-            children: [
-              const SizedBox(height: 20),
+          // --- NEW: Wrap content in Center and ConstrainedBox for responsiveness ---
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                maxWidth:
+                    600, // Maximum width for the game area (good for web/PC)
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 20),
 
-              // 3. ENEMY AREA (The Question Visualized)
-              Expanded(
-                flex: 4,
-                child: Center(
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    transform: Matrix4.translationValues(
-                        _isEnemyAttacking
-                            ? 0
-                            : (_isPlayerAttacking ? 20 : 0), // Hit react
-                        _isEnemyAttacking ? 50 : 0, // Attack lunge
-                        0),
+                  // 3. ENEMY AREA (The Question Visualized)
+                  Expanded(
+                    flex: 4,
+                    child: Center(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        transform: Matrix4.translationValues(
+                            _isEnemyAttacking
+                                ? 0
+                                : (_isPlayerAttacking ? 20 : 0),
+                            _isEnemyAttacking ? 50 : 0,
+                            0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // ENEMY SPRITE (Placeholder for Monster)
+                            Image.asset('assets/images/monster.gif'),
+                            const SizedBox(height: 10),
+                            // TIME BAR (This is what was likely disappearing)
+                            SizedBox(
+                              width: 150,
+                              child: LinearProgressIndicator(
+                                value: _timeToAttack,
+                                backgroundColor: Colors.grey[800],
+                                color: _timeToAttack < 0.3
+                                    ? Colors.red
+                                    : Colors.orange,
+                                minHeight: 8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 4. DIALOGUE BOX (The Question Text) - Keep it in the Column
+                  // Use the revised version that supports images:
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[900]!.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // ENEMY SPRITE (Use a placeholder icon if you don't have an image)
-                        Image.asset('assets/images/monster.gif'),
-
+                        const Text(
+                          "MONSTER ASKS:",
+                          style: TextStyle(
+                              color: Colors.yellowAccent,
+                              fontFamily: 'PressStart2P',
+                              fontSize: 10),
+                        ),
                         const SizedBox(height: 10),
-                        // TIME BAR
-                        SizedBox(
-                          width: 150,
-                          child: LinearProgressIndicator(
-                            value: _timeToAttack,
-                            backgroundColor: Colors.grey[800],
-                            color: _timeToAttack < 0.3
-                                ? Colors.red
-                                : Colors.orange,
-                            minHeight: 8,
+                        if (_questions[_currentIndex].imageUrl != null &&
+                            _questions[_currentIndex].imageUrl!.isNotEmpty) ...[
+                          Container(
+                            height: 120,
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 10),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.white30),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Image.network(
+                              _questions[_currentIndex].imageUrl!,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                      child: Icon(Icons.broken_image,
+                                          color: Colors.white)),
+                            ),
                           ),
+                        ],
+                        Text(
+                          _questions[_currentIndex].text,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: 'PressStart2P',
+                              fontSize: 12,
+                              height: 1.5),
                         ),
                       ],
                     ),
                   ),
-                ),
+
+                  const SizedBox(height: 10),
+
+                  // 5. INPUT COMMAND (Answer Field)
+                  Container(
+                    width: double
+                        .infinity, // Use double.infinity to fill the constrained width
+                    padding: const EdgeInsets.all(16),
+                    color: Colors.black87,
+                    child: Row(
+                      children: [
+                        const Text("> ",
+                            style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 18,
+                                fontFamily: 'PressStart2P')),
+                        Expanded(
+                          child: TextField(
+                            controller: _textController,
+                            focusNode: _focusNode,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontFamily: 'PressStart2P',
+                                fontSize: 14),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: "Type answer...",
+                              hintStyle: TextStyle(
+                                  color: Colors.white24,
+                                  fontFamily: 'PressStart2P',
+                                  fontSize: 12),
+                            ),
+                            onSubmitted: (_) => _submitAnswer(),
+                          ),
+                        ),
+                        IconButton(
+                          icon:
+                              const Icon(Icons.send, color: Colors.greenAccent),
+                          onPressed: _submitAnswer,
+                        )
+                      ],
+                    ),
+                  )
+                ],
               ),
-
-              // 4. DIALOGUE BOX (The Question Text)
-              Container(
-                width: double.infinity,
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue[900]!.withOpacity(0.9),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "MONSTER ASKS:",
-                      style: TextStyle(
-                          color: Colors.yellowAccent,
-                          fontFamily: 'PressStart2P',
-                          fontSize: 10),
-                    ),
-                    const SizedBox(height: 10),
-                    // --- NEW CODE START: Display Image if available ---
-                    if (_questions[_currentIndex].imageUrl != null &&
-                        _questions[_currentIndex].imageUrl!.isNotEmpty) ...[
-                      Container(
-                        height:
-                            120, // Limit height to prevent covering the screen
-                        width: double.infinity,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.white30),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Image.network(
-                          _questions[_currentIndex].imageUrl!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Center(
-                                  child: Icon(Icons.broken_image,
-                                      color: Colors.white)),
-                        ),
-                      ),
-                    ],
-                    Text(
-                      _questions[_currentIndex].text,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontFamily: 'PressStart2P',
-                          fontSize: 12,
-                          height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              // 5. INPUT COMMAND (Answer Field)
-              Container(
-                padding: const EdgeInsets.all(16),
-                color: Colors.black87,
-                child: Row(
-                  children: [
-                    const Text("> ",
-                        style: TextStyle(
-                            color: Colors.greenAccent,
-                            fontSize: 18,
-                            fontFamily: 'PressStart2P')),
-                    Expanded(
-                      child: TextField(
-                        controller: _textController,
-                        focusNode: _focusNode,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontFamily: 'PressStart2P',
-                            fontSize: 14),
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          hintText: "Type answer...",
-                          hintStyle: TextStyle(
-                              color: Colors.white24,
-                              fontFamily: 'PressStart2P',
-                              fontSize: 12),
-                        ),
-                        onSubmitted: (_) => _submitAnswer(),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.send, color: Colors.greenAccent),
-                      onPressed: _submitAnswer,
-                    )
-                  ],
-                ),
-              )
-            ],
+            ),
           ),
+          if (_gameStatus == GameStatus.gameOver)
+            _buildEndGameOverlay("GAME OVER\nYOU DIED", Colors.redAccent),
+
+          if (_gameStatus == GameStatus.victory)
+            _buildEndGameOverlay(
+                "VICTORY!\nQUEST COMPLETE", Colors.greenAccent),
         ],
       ),
     );
   }
+}
+
+Widget _buildEndGameOverlay(String message, Color color) {
+  return Container(
+    color: Colors.black.withValues(alpha: 0.8), // Dark transparent background
+    alignment: Alignment.center,
+    child: Text(
+      message,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        color: color,
+        fontFamily: 'PressStart2P',
+        fontSize: 32,
+        shadows: [
+          Shadow(
+            blurRadius: 10.0,
+            color: color.withValues(alpha: 0.8),
+            offset: const Offset(5.0, 5.0),
+          ),
+        ],
+      ),
+    ),
+  );
 }
