@@ -50,24 +50,78 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
   double _timeToAttack = 1.0; // 1.0 = Full time, 0.0 = Attack triggers
   static const int _secondsPerQuestion = 15; // Time to answer before hit
 
+  // --- AUDIO PLAYERS ---
+  late AudioPlayer _backgroundMusicPlayer;
   late AudioPlayer _sfxPlayer;
-  late AudioPlayer _bgmPlayer;
 
   @override
   void initState() {
     super.initState();
-    _sfxPlayer = AudioPlayer();
-    _bgmPlayer = AudioPlayer();
+
+        AudioPlayer.global.setAudioContext(
+      AudioContext(
+        android: const AudioContextAndroid(
+          contentType: AndroidContentType.music,
+          usageType: AndroidUsageType.game,
+          audioFocus: AndroidAudioFocus.none,
+        ),
+        iOS: AudioContextIOS(
+          category: AVAudioSessionCategory.multiRoute,
+          options: const {AVAudioSessionOptions.mixWithOthers},
+        ),
+      ),
+    );
+
+    _initializeAudioPlayers();
+
     _loadQuestions();
   }
 
+
+  Future<void> _initializeAudioPlayers() async {
+    _backgroundMusicPlayer = AudioPlayer();
+    _sfxPlayer = AudioPlayer();
+
+    // No need to set a PlayerMode for BGM — ReleaseMode.loop is sufficient.
+// Keep the SFX player low-latency for snappy sound effects.
+    try {
+      await _sfxPlayer.setPlayerMode(PlayerMode.mediaPlayer);
+    } catch (_) {}
+
+    // Start background music (non-blocking)
+    _playBackgroundMusic();
+  }
+
+  Future<void> _playBackgroundMusic() async {
+    try {
+      await _backgroundMusicPlayer.setReleaseMode(ReleaseMode.loop);
+      // Use AssetSource to play packaged asset
+      await _backgroundMusicPlayer.play(AssetSource('audio/dungeon_theme.mp3'));
+    } catch (e) {
+      // Fail silently so missing asset won't crash the game
+      // You can log or show debug message in development
+      // debugPrint('BGM play error: $e');
+    }
+  }
+
+  Future<void> _playSfx(String asset) async {
+    try {
+      // Use lowLatency mode for snappy SFX playback; this won't interrupt the BGM player.
+      await _sfxPlayer.play(AssetSource('audio/$asset'),
+          mode: PlayerMode.mediaPlayer);
+    } catch (e) {
+      // debugPrint('SFX play error: $e');
+    }
+  }
+
+  
   @override
   void dispose() {
     _attackTimer?.cancel();
     _textController.dispose();
     _focusNode.dispose();
     _sfxPlayer.dispose();
-    _bgmPlayer.dispose();
+    _backgroundMusicPlayer.dispose();
     super.dispose();
   }
 
@@ -88,7 +142,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
         setState(() {
           _questions = textQuestions;
           _startTurn();
-          _playBGM();
+          _playBackgroundMusic();
         });
       }
     }
@@ -179,7 +233,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     });
 
     // Change this to a hero sound, e.g., 'sword_hit.wav' or 'laser.wav'
-    _sfxPlayer.play(AssetSource('audio/sword_hit.wav'));
+    _playSfx('sword_hit.wav');
     
 
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -208,7 +262,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     // --- FIX: Play Dragon Attack Sound Here ---
     // Previously, this was only playing 'damage.wav'.
     // Now it plays the attack sound when the timer runs out or you miss.
-    _sfxPlayer.play(AssetSource('audio/dragon_attack.wav'));
+    _playSfx('dragon_attack.wav');
     
 
     Future.delayed(const Duration(milliseconds: 800), () {
@@ -224,14 +278,6 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     });
   }
 
-  void _playBGM() async {
-    // Set the loop mode to play indefinitely
-    await _bgmPlayer.setReleaseMode(ReleaseMode.loop);
-
-    // Start playing the music file
-    // NOTE: Ensure 'dungeon_theme.mp3' exists in your 'assets/audio/' folder!
-    await _bgmPlayer.play(AssetSource('audio/dungeon_theme.mp3'));
-  }
 
   void _nextQuestion() {
     if (_currentIndex < _questions.length - 1) {
@@ -255,11 +301,11 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
 
     // 2. Play win/lose sound (optional)
     if (status == GameStatus.gameOver) {
-      _bgmPlayer.stop();
-      _sfxPlayer.play(AssetSource('audio/lose.wav'));
+      _backgroundMusicPlayer.stop();
+      _playSfx('lose.wav');
     } else {
-      _bgmPlayer.stop();
-      _sfxPlayer.play(AssetSource('audio/win.wav'));
+      _backgroundMusicPlayer.stop();
+      _playSfx('win.wav');
     }
 
     // 3. Pause for 2 seconds to let the player see the "Game Over" or "Victory" screen
