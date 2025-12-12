@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:retroquest/screens/quiz_screen.dart';
 import 'package:retroquest/services/firestore_service.dart';
 import 'package:retroquest/screens/arcade_quiz_screen.dart'; // <--- NEW IMPORT
+import 'package:retroquest/screens/dungeon_quiz_screen.dart';
 
 class TeacherSubjectsScreen extends StatelessWidget {
   final String teacherId;
@@ -22,8 +23,7 @@ class TeacherSubjectsScreen extends StatelessWidget {
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: const Color(0xFF1E2336),
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(25)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
             border: Border.all(color: Colors.pinkAccent, width: 2),
           ),
           child: Column(
@@ -59,8 +59,32 @@ class TeacherSubjectsScreen extends StatelessWidget {
                   backgroundColor: Colors.greenAccent,
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  textStyle: const TextStyle(
-                      fontSize: 12, fontFamily: 'PressStart2P'),
+                  textStyle:
+                      const TextStyle(fontSize: 12, fontFamily: 'PressStart2P'),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 3. Dungeon Mode Button
+              ElevatedButton.icon(
+                icon: const Icon(Icons.fort, color: Colors.white),
+                label: const Text('Dungeon Battle (Typing)'),
+                onPressed: () {
+                  Navigator.pop(bc);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => DungeonQuizScreen(
+                          subject: subjectName, teacherId: teacherId),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.deepPurple, // RPG Theme color
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  textStyle:
+                      const TextStyle(fontSize: 12, fontFamily: 'PressStart2P'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -119,8 +143,7 @@ class TeacherSubjectsScreen extends StatelessWidget {
           backgroundColor: color,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
         child: Text(
           level,
