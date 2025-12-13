@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/question_model.dart';
@@ -73,6 +75,7 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
   List<String> _pendingOptions = [];
   int _correctAnswers = 0;
   int _incorrectAnswers = 0;
+  String? _userRole;
   final List<Map<String, dynamic>> _userAnswers = [];
 
   // --- AUDIO PLAYERS ---
@@ -86,6 +89,7 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
   @override
   void initState() {
     super.initState();
+    _fetchUserRole();
 
     AudioPlayer.global.setAudioContext(
       AudioContext(
@@ -112,6 +116,21 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
 
     _backgroundAnimation =
         Tween<double>(begin: 0.0, end: 1.0).animate(_backgroundController);
+  }
+
+  Future<void> _fetchUserRole() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      if (mounted) {
+        setState(() {
+          _userRole = userDoc.data()?['role'];
+        });
+      }
+    }
   }
 
   // Made async so we can set player modes and start music safely.
@@ -566,6 +585,7 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
           correctAnswers: _correctAnswers,
           incorrectAnswers: _incorrectAnswers,
           attemptDetails: _userAnswers,
+          userRole: _userRole,
         ),
       ),
     );

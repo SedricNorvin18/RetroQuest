@@ -543,8 +543,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
           child: Card(
             color: const Color.fromARGB(138, 0, 0, 0),
             elevation: 4,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12)),
             child: ExpansionTile(
               key: PageStorageKey(subject), // Preserve expansion state
               initiallyExpanded: _expandedSubjects.contains(subject),
@@ -578,6 +578,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             incorrectAnswers: attempt.incorrectAnswers, // Real data
                             attemptDetails:
                                 attempt.attemptDetails, // The detailed review list!
+                            userRole: _userRole,
                           ),
                         ),
                       );

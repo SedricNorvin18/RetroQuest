@@ -8,6 +8,7 @@ class QuizResultScreen extends StatelessWidget {
   final int incorrectAnswers;
   // New field to receive detailed answers
   final List<Map<String, dynamic>> attemptDetails;
+  final String? userRole;
 
   const QuizResultScreen({
     super.key,
@@ -17,6 +18,7 @@ class QuizResultScreen extends StatelessWidget {
     required this.incorrectAnswers,
     // default to empty list if not provided to prevent errors
     this.attemptDetails = const [], 
+    this.userRole,
   });
 
   @override
@@ -164,6 +166,7 @@ class QuizResultScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
+                            if (userRole != 'teacher')
                             ElevatedButton(
                               onPressed: () => Navigator.pop(context),
                               style: ElevatedButton.styleFrom(

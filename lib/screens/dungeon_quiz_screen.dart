@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../models/question_model.dart';
@@ -37,6 +39,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
   int _correctAnswers = 0;
   int _incorrectAnswers = 0;
   final List<Map<String, dynamic>> _userAnswers = [];
+  String? _userRole;
 
   GameStatus _gameStatus = GameStatus.playing;
 
@@ -57,6 +60,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
   @override
   void initState() {
     super.initState();
+    _fetchUserRole();
 
         AudioPlayer.global.setAudioContext(
       AudioContext(
@@ -75,6 +79,21 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
     _initializeAudioPlayers();
 
     _loadQuestions();
+  }
+
+  Future<void> _fetchUserRole() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      if (mounted) {
+        setState(() {
+          _userRole = userDoc.data()?['role'];
+        });
+      }
+    }
   }
 
 
@@ -333,6 +352,7 @@ class _DungeonQuizScreenState extends State<DungeonQuizScreen>
           correctAnswers: _correctAnswers,
           incorrectAnswers: _incorrectAnswers,
           attemptDetails: _userAnswers,
+          userRole: _userRole,
         ),
       ),
     );

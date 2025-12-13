@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -30,6 +31,7 @@ class _QuizScreenState extends State<QuizScreen> {
   final FocusNode _textFocusNode = FocusNode(); // <--- ADD THIS
   bool _isAnswered = false;
   String? _teacherId;
+  String? _userRole;
   Timer? _timer;
   int _countdown = 0;
   final List<Map<String, dynamic>> _userAnswers = [];
@@ -37,6 +39,7 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void initState() {
     super.initState();
+    _fetchUserRole();
     _questionsFuture = _loadQuestions().then((questions) {
       if (questions.isNotEmpty) {
         _startTimer();
@@ -44,6 +47,22 @@ class _QuizScreenState extends State<QuizScreen> {
       return questions;
     });
   }
+  
+    Future<void> _fetchUserRole() async {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+      if (mounted) {
+        setState(() {
+          _userRole = userDoc.data()?['role'];
+        });
+      }
+    }
+  }
+
 
   @override
   void dispose() {
@@ -139,6 +158,7 @@ class _QuizScreenState extends State<QuizScreen> {
           correctAnswers: _correctAnswers,
           incorrectAnswers: _incorrectAnswers,
           attemptDetails: _userAnswers, // <--- PASS THE DATA HERE
+          userRole: _userRole,
         ),
       ),
     );
