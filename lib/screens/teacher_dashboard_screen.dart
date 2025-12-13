@@ -750,6 +750,13 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   Widget _buildMobileLayout() {
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: _currentView == 'students' // <-- ADDED CONDITIONAL FAB
+          ? FloatingActionButton(
+              onPressed: _addStudentDialog,
+              backgroundColor: Colors.greenAccent,
+              child: const Icon(Icons.person_add, color: Colors.black),
+            )
+          : null,
       appBar: AppBar(
         backgroundColor: Colors.deepPurple.shade900.withAlpha(217),
         elevation: 0,
@@ -961,6 +968,20 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
+  // NEW HELPER FUNCTION for list constraint
+  Widget _buildConstrainedListContainer(Widget child) {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(
+            maxWidth: 800), // Max width for content readability
+        child: Padding(
+          padding: const EdgeInsets.all(24.0), // Consistent padding
+          child: child,
+        ),
+      ),
+    );
+  }
+
   Widget _buildContent() {
     if (_isLoading) {
       return const Center(
@@ -972,7 +993,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       );
     }
     if (_currentView == 'questions') {
-      return _buildQuestionsList();
+      return _buildConstrainedListContainer(_buildQuestionsList());
     }
     if (_currentView == 'history') {
       return const HistoryScreen();
@@ -980,10 +1001,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
     if (_currentView == 'students') {
       // <--- ADD THIS
-      return _buildStudentsView(); // <--- ADD THIS
+      return _buildConstrainedListContainer(_buildStudentsView());
     }
 
-    return _subjects.isEmpty ? _buildEmptyState() : _buildSubjectList();
+    return _subjects.isEmpty
+        ? _buildEmptyState()
+        : _buildConstrainedListContainer(_buildSubjectList());
   }
 
   Widget _buildEmptyState() {
@@ -1007,7 +1030,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           ),
           const SizedBox(height: 32),
           ElevatedButton.icon(
-            onPressed: () => _showUploadForm(),
+            onPressed: () => _showUploadForm(isNewQuiz: true),
             icon: const Icon(Icons.add, color: Colors.black),
             label: const Text('Create a Quiz'),
             style: ElevatedButton.styleFrom(
@@ -1025,220 +1048,208 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
- Widget _buildSubjectList() {
-    // WRAP: Center -> ConstrainedBox to limit width for readability
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 800),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'My Quizzes',
-                style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontFamily: 'PressStart2P'),
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: RefreshIndicator(
-                  onRefresh: _loadSubjects,
-                  color: Colors.greenAccent,
-                  backgroundColor: const Color(0xFF1E2336),
-                  child: ReorderableListView.builder(
-                    itemCount: _subjects.length,
-                    onReorder: _updateSubjectOrder,
-                    itemBuilder: (context, index) {
-                      final subject = _subjects[index];
-                      return Card(
-                        key: ValueKey(subject['id']),
-                        margin: const EdgeInsets.symmetric(vertical: 8.0),
-                        color: Colors.black54,
-                        elevation: 4,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                        child: ListTile(
-                          title: Text(subject['id'],
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                  fontFamily: 'PressStart2P')),
-                          trailing: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                icon: const Icon(Icons.edit,
-                                    color: Colors.white70),
-                                onPressed: () => _editSubject(subject['id']),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete,
-                                    color: Colors.pinkAccent),
-                                onPressed: () => _deleteSubject(subject['id']),
-                              ),
-                            ],
-                          ),
-                          onTap: () => _showQuestionsForSubject(subject['id']),
+  Widget _buildSubjectList() {
+    // REMOVED OUTER PADDING: _buildConstrainedListContainer now handles padding.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'My Quizzes',
+          style: TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontFamily: 'PressStart2P'),
+        ),
+        const SizedBox(height: 24),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: _loadSubjects,
+            color: Colors.greenAccent,
+            backgroundColor: const Color(0xFF1E2336),
+            child: ReorderableListView.builder(
+              itemCount: _subjects.length,
+              onReorder: _updateSubjectOrder,
+              itemBuilder: (context, index) {
+                final subject = _subjects[index];
+                return Card(
+                  key: ValueKey(subject['id']),
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                  color: Colors.black54,
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    title: Text(subject['id'],
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: 'PressStart2P'),
+                        overflow: TextOverflow.ellipsis), // <-- ADDED ELLIPSIS
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit, color: Colors.white70),
+                          onPressed: () => _editSubject(subject['id']),
                         ),
-                      );
-                    },
+                        IconButton(
+                          icon:
+                              const Icon(Icons.delete, color: Colors.pinkAccent),
+                          onPressed: () => _deleteSubject(subject['id']),
+                        ),
+                      ],
+                    ),
+                    onTap: () => _showQuestionsForSubject(subject['id']),
                   ),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 
- Widget _buildQuestionsList() {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('subjects')
-            .doc(_selectedSubjectForQuestions)
-            .collection('questions')
-            .where('teacherId', isEqualTo: _user!.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final questions = snapshot.data!.docs
-              .map((doc) => Question.fromFirestore(doc))
-              .toList();
+  Widget _buildQuestionsList() {
+    // REMOVED OUTER SCAFFOLD
+    return Column(
+      children: [
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('subjects')
+                .doc(_selectedSubjectForQuestions)
+                .collection('questions')
+                .where('teacherId', isEqualTo: _user!.uid)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final questions = snapshot.data!.docs
+                  .map((doc) => Question.fromFirestore(doc))
+                  .toList();
 
-          if (questions.isEmpty) {
-            return _buildQuestionsEmptyState();
-          }
+              // --- NEW: Empty State Check ---
+              if (questions.isEmpty) {
+                return _buildQuestionsEmptyState(); // Use a dedicated helper function
+              }
+              // --- END NEW ---
 
-          // WRAP: Center -> ConstrainedBox to limit width for readability
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: Column(
-                children: [
-                  Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(24.0),
-                      itemCount: questions.length,
-                      itemBuilder: (context, index) {
-                        final question = questions[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8.0),
-                          color: Colors.black54,
-                          elevation: 4,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12)),
-                          child: ListTile(
-                            title: Text(question.text,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white)),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Type: ${question.questionType.toString().split('.').last.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')}',
-                                  style: TextStyle(
-                                      color: Colors.grey.shade400,
-                                      fontSize: 12),
-                                ),
-                                const SizedBox(height: 4),
-                                if (question.questionType ==
-                                        QuestionType.fillInTheBlank ||
-                                    question.questionType ==
-                                        QuestionType.shortAnswer)
-                                  Text(
-                                    'Correct Answer: "${question.correctAnswer}"',
-                                    style: const TextStyle(
-                                      color: Colors.greenAccent,
-                                      fontWeight: FontWeight.bold,
-                                      fontStyle: FontStyle.italic,
-                                      fontSize: 14,
-                                    ),
-                                  ),
-                                if (question.questionType ==
-                                        QuestionType.multipleChoice ||
-                                    question.questionType ==
-                                        QuestionType.trueFalse)
-                                  ...question.options.map((option) {
-                                    return Text(
-                                      option,
-                                      style: TextStyle(
-                                        color: question.correctAnswer == option
-                                            ? Colors.greenAccent
-                                            : Colors.pinkAccent,
-                                      ),
-                                    );
-                                  }),
-                                if (question.timeLimit != null)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: Text('Time: ${question.timeLimit}s',
-                                        style: const TextStyle(
-                                            color: Colors.white70)),
-                                  )
-                              ],
-                            ),
-                            trailing: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                IconButton(
-                                  icon: const Icon(Icons.edit,
-                                      color: Colors.white70),
-                                  onPressed: () => _showUploadForm(
-                                      question: question,
-                                      subjectId: _selectedSubjectForQuestions),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.pinkAccent),
-                                  onPressed: () {
-                                    _confirmAndDeleteQuestion(question,
-                                        _selectedSubjectForQuestions!);
-                                  },
-                                ),
-                              ],
-                            ),
+              return ListView.builder(
+                // REMOVED PADDING, now handled by _buildConstrainedListContainer
+                itemCount: questions.length,
+                itemBuilder: (context, index) {
+                  final question = questions[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(vertical: 8.0),
+                    color: Colors.black54,
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      title: Text(question.text,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                          overflow: TextOverflow.ellipsis), // <-- ADDED ELLIPSIS
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Type: ${question.questionType.toString().split('.').last.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')}',
+                            style: TextStyle(
+                                color: Colors.grey.shade400, fontSize: 12),
                           ),
-                        );
-                      },
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(24.0),
-                    child: ElevatedButton.icon(
-                      onPressed: () => _showUploadForm(
-                          subjectId: _selectedSubjectForQuestions),
-                      icon: const Icon(Icons.add, color: Colors.black),
-                      label: const Text('Add Question'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.greenAccent,
-                        foregroundColor: Colors.black,
-                        minimumSize: const Size(double.infinity, 52),
-                        textStyle: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'PressStart2P'),
+                          const SizedBox(height: 4),
+                          // --- Conditional Answer Display ---
+                          if (question.questionType ==
+                                  QuestionType.fillInTheBlank ||
+                              question.questionType ==
+                                  QuestionType.shortAnswer)
+                            Text(
+                              'Correct Answer: "${question.correctAnswer}"',
+                              style: const TextStyle(
+                                color: Colors.greenAccent,
+                                fontWeight: FontWeight.bold,
+                                fontStyle: FontStyle.italic,
+                                fontSize: 14,
+                              ),
+                              overflow: TextOverflow.ellipsis, // <-- ADDED ELLIPSIS
+                            ),
+                          if (question.questionType ==
+                                  QuestionType.multipleChoice ||
+                              question.questionType == QuestionType.trueFalse)
+                            ...question.options.map((option) {
+                              return Text(
+                                option,
+                                style: TextStyle(
+                                  color: question.correctAnswer == option
+                                      ? Colors.greenAccent
+                                      : Colors.pinkAccent,
+                                ),
+                                overflow: TextOverflow.ellipsis, // <-- ADDED ELLIPSIS
+                              );
+                            }),
+                          // --- End Conditional Answer Display ---
+                          if (question.timeLimit != null)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 8.0),
+                              child: Text('Time: ${question.timeLimit}s',
+                                  style:
+                                      const TextStyle(color: Colors.white70)),
+                            )
+                        ],
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon:
+                                const Icon(Icons.edit, color: Colors.white70),
+                            onPressed: () => _showUploadForm(
+                                question: question,
+                                subjectId: _selectedSubjectForQuestions),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete,
+                                color: Colors.pinkAccent),
+                            onPressed: () {
+                              // Calls the new method that handles all async logic and mounted checks
+                              _confirmAndDeleteQuestion(
+                                  question, _selectedSubjectForQuestions!);
+                            },
+                          ),
+                        ],
                       ),
                     ),
-                  )
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16.0), // Added spacing instead of bottom padding
+        ElevatedButton.icon(
+          onPressed: () =>
+              _showUploadForm(subjectId: _selectedSubjectForQuestions),
+          icon: const Icon(Icons.add, color: Colors.black),
+          label: const Text('Add Question'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.greenAccent,
+            foregroundColor: Colors.black,
+            minimumSize: const Size(double.infinity, 52),
+            textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'PressStart2P'),
+          ),
+        )
+      ],
     );
   }
 
@@ -1633,7 +1644,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontFamily: 'PressStart2P')),
+                    fontFamily: 'PressStart2P'),
+                overflow: TextOverflow.ellipsis), // <-- ADDED ELLIPSIS
             // REMOVED SUBTITLE: The UID is no longer displayed
             trailing: IconButton(
               icon: const Icon(Icons.person_remove, color: Colors.pinkAccent),
@@ -1802,59 +1814,76 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
   }
 
   Widget _buildStudentsView() {
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      floatingActionButton: FloatingActionButton(
-        onPressed: _addStudentDialog,
-        backgroundColor: Colors.greenAccent,
-        child: const Icon(Icons.person_add, color: Colors.black),
-      ),
-      body: StreamBuilder<List<EnrolledStudent>>(
-        stream: FirestoreService().getEnrolledStudents(_user!.uid),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-          final students = snapshot.data ?? [];
-
-          if (students.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'No students enrolled.',
-                    style: TextStyle(
-                        fontSize: 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'PressStart2P'),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Tap the + button to enroll a student by email.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 16, color: Colors.white70),
-                  ),
-                ],
+    // REMOVED OUTER SCAFFOLD and FLOATING ACTION BUTTON for mobile
+    return Column(
+      children: [
+        // Add an "Add Student" button for web view (since FAB is mobile-only)
+        if (MediaQuery.of(context).size.width >= 800)
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 16.0),
+              child: ElevatedButton.icon(
+                onPressed: _addStudentDialog,
+                icon: const Icon(Icons.person_add, color: Colors.black),
+                label: const Text('Add Student'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.greenAccent,
+                  foregroundColor: Colors.black,
+                  textStyle: const TextStyle(fontFamily: 'PressStart2P'),
+                ),
               ),
-            );
-          }
+            ),
+          ),
+        Expanded(
+          child: StreamBuilder<List<EnrolledStudent>>(
+            stream: FirestoreService().getEnrolledStudents(_user!.uid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+              final students = snapshot.data ?? [];
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(24.0),
-            itemCount: students.length,
-            itemBuilder: (context, index) {
-              final student = students[index];
-              return _buildStudentListItem(
-                  student); // Use the new nested builder
+              if (students.isEmpty) {
+                return const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'No students enrolled.',
+                        style: TextStyle(
+                            fontSize: 24,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'PressStart2P'),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Tap the + button to enroll a student by email.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 16, color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                // REMOVED PADDING
+                itemCount: students.length,
+                itemBuilder: (context, index) {
+                  final student = students[index];
+                  return _buildStudentListItem(
+                      student); // Use the new nested builder
+                },
+              );
             },
-          );
-        },
-      ),
+          ),
+        ),
+      ],
     );
   }
 

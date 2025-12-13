@@ -645,14 +645,30 @@ class _ArcadeQuizScreenState extends State<ArcadeQuizScreen>
                 border: Border.all(color: Colors.greenAccent, width: 3),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: Text(
-                currentQuestion.text,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: 'PressStart2P',
-                  fontSize: 14,
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (currentQuestion.imageUrl != null &&
+                      currentQuestion.imageUrl!.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8.0),
+                      child: Image.network(
+                        currentQuestion.imageUrl!,
+                        height: 100, // Adjust height as needed
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_not_supported, color: Colors.grey),
+                      ),
+                    ),
+                  Text(
+                    currentQuestion.text,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'PressStart2P',
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
