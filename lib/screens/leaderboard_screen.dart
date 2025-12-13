@@ -87,7 +87,12 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
               })
             : null,
       ),
-      body: _buildBody(),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _buildBody(),
+        ),
+      ),
     );
   }
 
@@ -316,7 +321,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
           horizontal: 16, vertical: 12), // Adjusted vertical padding
       decoration: BoxDecoration(
         color: Colors.black
-            .withAlpha((0.5 * 255).round()), // Fixed deprecated withValues
+            .withValues(alpha: 0.5),
         borderRadius:
             BorderRadius.circular(8), // Slightly smaller border radius
         border: Border.all(color: Colors.cyanAccent, width: 1),
@@ -392,7 +397,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
             horizontal: 16, vertical: 12), // Adjusted vertical padding
         decoration: BoxDecoration(
           color: Colors.black
-              .withAlpha((0.5 * 255).round()), // Fixed deprecated withValues
+              .withValues(alpha: 0.5),
           borderRadius:
               BorderRadius.circular(8), // Slightly smaller border radius
           border: Border.all(color: Colors.purpleAccent, width: 1),

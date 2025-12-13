@@ -422,28 +422,32 @@ class _QuizScreenState extends State<QuizScreen> {
                             ),
                           ),
                         const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.all(20),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF2A314D),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(128),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
+                        Flexible(
+                          child: SingleChildScrollView(
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF2A314D),
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(128),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: Text(
-                            currentQuestion.text,
-                            textAlign: TextAlign.center,
-                            style: textTheme.headlineSmall
-                                ?.copyWith(color: Colors.white),
+                              child: Text(
+                                currentQuestion.text,
+                                textAlign: TextAlign.center,
+                                style: textTheme.headlineSmall
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 30),
-                        Expanded(
+                        Flexible(
                           child: SingleChildScrollView(
                             // Added SingleChildScrollView
                             child: _buildQuestionWidget(currentQuestion),

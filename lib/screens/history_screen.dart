@@ -501,7 +501,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   )
               ],
             ),
-      body: _buildBody(visibleGroupedAttempts),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 800),
+          child: _buildBody(visibleGroupedAttempts),
+        ),
+      ),
     );
   }
 
@@ -558,25 +563,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
               children: subjectAttempts.map((attempt) {
                 final isSelected = _selectedAttempts.contains(attempt.id);
                 return ListTile(
-  onTap: () {
-  if (_isSelectionMode) {
-    _onAttemptSelected(attempt.id, !isSelected);
-  } else {
-    // Navigate to Results Screen with REAL data from history
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => QuizResultScreen(
-          score: attempt.score.toInt(),
-          totalQuestions: attempt.totalQuestions, // Real data
-          correctAnswers: attempt.correctAnswers, // Real data
-          incorrectAnswers: attempt.incorrectAnswers, // Real data
-          attemptDetails: attempt.attemptDetails, // The detailed review list!
-        ),
-      ),
-    );
-  }
-},
+                  onTap: () {
+                    if (_isSelectionMode) {
+                      _onAttemptSelected(attempt.id, !isSelected);
+                    } else {
+                      // Navigate to Results Screen with REAL data from history
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => QuizResultScreen(
+                            score: attempt.score.toInt(),
+                            totalQuestions: attempt.totalQuestions, // Real data
+                            correctAnswers: attempt.correctAnswers, // Real data
+                            incorrectAnswers: attempt.incorrectAnswers, // Real data
+                            attemptDetails:
+                                attempt.attemptDetails, // The detailed review list!
+                          ),
+                        ),
+                      );
+                    }
+                  },
                   onLongPress: () {
                     if (!_isSelectionMode) {
                       setState(() {
@@ -610,7 +616,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         style: const TextStyle(color: Colors.white70),
                       ),
                       Text(
-                        DateFormat.yMd().add_jm().format(attempt.timestamp.toDate()),
+                        DateFormat.yMd()
+                            .add_jm()
+                            .format(attempt.timestamp.toDate()),
                         style: const TextStyle(color: Colors.white70),
                       ),
                     ],
