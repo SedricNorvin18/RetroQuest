@@ -7,7 +7,7 @@ class HelpScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Help'),
+        title: const Text('Help for Students'),
         backgroundColor: Colors.deepPurple,
       ),
       body: Container(
