@@ -177,4 +177,8 @@ class FirestoreService {
             .map((doc) => EnrollmentRequest.fromFirestore(doc))
             .toList());
   }
+
+  Future<void> deleteEnrollmentRequest(String requestId) {
+    return _db.collection('enrollmentRequests').doc(requestId).delete();
+  }
 }

@@ -145,10 +145,24 @@ class StudentRequestsScreen extends StatelessWidget {
                                 ],
                               ),
                             ),
-                            Icon(
-                              _getStatusIcon(request.status),
-                              color: _getStatusColor(request.status),
-                              size: 32,
+                            Row(
+                              children: [
+                                Icon(
+                                  _getStatusIcon(request.status),
+                                  color: _getStatusColor(request.status),
+                                  size: 32,
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.white70),
+                                  onPressed: () async {
+                                    final messenger = ScaffoldMessenger.of(context);
+                                    await firestoreService.deleteEnrollmentRequest(request.id);
+                                    messenger.showSnackBar(
+                                      const SnackBar(content: Text('Request deleted')),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),
