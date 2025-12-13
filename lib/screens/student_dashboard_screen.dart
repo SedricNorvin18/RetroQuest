@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:retroquest/screens/account_settings_screen.dart';
 import 'package:retroquest/screens/find_teacher_screen.dart';
+import 'package:retroquest/screens/help_screen.dart';
 import 'package:retroquest/screens/history_screen.dart';
 import 'package:retroquest/screens/leaderboard_screen.dart';
 import 'package:retroquest/screens/profile_screen.dart';
@@ -182,36 +183,37 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   }
 
 // Helper widget for difficulty buttons
-Widget _buildDifficultyButton(BuildContext context, String level, Color color, String subject, String teacherId) {
-  return Expanded(
-    child: ElevatedButton(
-      onPressed: () {
-        Navigator.pop(context); // Close modal
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ArcadeQuizScreen(
-                subject: subject, 
-                teacherId: teacherId, 
-                difficulty: level // Pass the selected difficulty
-            ), 
-          ),
-        );
-      },
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+  Widget _buildDifficultyButton(BuildContext context, String level, Color color,
+      String subject, String teacherId) {
+    return Expanded(
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pop(context); // Close modal
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ArcadeQuizScreen(
+                  subject: subject,
+                  teacherId: teacherId,
+                  difficulty: level // Pass the selected difficulty
+                  ),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(
+          level,
+          style: const TextStyle(fontFamily: 'PressStart2P', fontSize: 10),
+        ),
       ),
-      child: Text(
-        level,
-        style: const TextStyle(fontFamily: 'PressStart2P', fontSize: 10),
-      ),
-    ),
-  );
-}
- 
+    );
+  }
+
   // Helper function to get teacher name from various possible fields
   String _getTeacherName(Map<String, dynamic>? teacherData) {
     if (teacherData == null) {
@@ -446,8 +448,21 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
             onTap: _showLeaderboardView),
         const Spacer(),
         _buildNavSectionTitle('PRODUCT'),
-        _buildNavItem(Icons.help_outline, 'Help',
-            isSelected: false, onTap: () {}),
+        _buildNavItem(
+          Icons.help_outline,
+          'Help',
+          isSelected: false,
+          onTap: () {
+            // This is the key part: use Navigator.push to navigate to the HelpScreen.
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const HelpScreen(), // The screen you want to go to
+              ),
+            );
+          },
+        ),
         _buildLogoutButton(),
       ],
     );
@@ -693,17 +708,17 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
                       if (!context.mounted) return;
 
                       if (isEnrolled) {
-    // Show the mode selection dialog instead of navigating directly
-    _showQuizModeSelection(context, subjectName, teacherId);
-} else {
-    if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text(
-                    'You must be enrolled with $teacherName to access this quiz.')),
-        );
-    }
-}
+                        // Show the mode selection dialog instead of navigating directly
+                        _showQuizModeSelection(context, subjectName, teacherId);
+                      } else {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'You must be enrolled with $teacherName to access this quiz.')),
+                          );
+                        }
+                      }
                     }, // <--- END OF MODIFIED onTap
                   ),
                 );
@@ -744,7 +759,10 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => QuizScreen(subject: subjectName, teacherId: '',),
+                  builder: (context) => QuizScreen(
+                    subject: subjectName,
+                    teacherId: '',
+                  ),
                 ),
               );
             },
@@ -834,7 +852,7 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
     );
   }
 
- Widget _buildEnrollmentsView() {
+  Widget _buildEnrollmentsView() {
     final studentUid = _user?.uid;
     if (studentUid == null) {
       return const Center(
@@ -902,7 +920,7 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
                 fontFamily: 'PressStart2P'),
           ),
           const Divider(color: Colors.white38),
-          
+
           // Existing StreamBuilder for Enrolled Teachers
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -925,7 +943,9 @@ Widget _buildDifficultyButton(BuildContext context, String level, Color color, S
                   return const Center(
                       child: Text('Not enrolled with any teacher.',
                           style: TextStyle(
-                              color: Colors.white70, fontFamily: 'PressStart2P', fontSize: 10)));
+                              color: Colors.white70,
+                              fontFamily: 'PressStart2P',
+                              fontSize: 10)));
                 }
 
                 return ListView.builder(

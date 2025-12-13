@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:retroquest/models/question_model.dart';
 import 'package:retroquest/screens/history_screen.dart';
+import 'package:retroquest/screens/teacher_help_screen.dart';
 import 'package:retroquest/services/firestore_service.dart'; // <--- ADD THIS
 import 'package:retroquest/models/enrolled_student.dart'; // <--- ADD THIS
 import 'package:retroquest/screens/account_settings_screen.dart'; // <--- ADD THIS
@@ -275,13 +276,14 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             question.options.length > 2 ? question.options[2] : '';
         _option4Controller.text =
             question.options.length > 3 ? question.options[3] : '';
-        
+
         // --- START FIX/UPDATE: Handle question type and options for non-MC/TF types ---
         _selectedQuestionType = question.questionType; // <--- ADD THIS LINE
-        
-        if (question.questionType == QuestionType.multipleChoice || 
+
+        if (question.questionType == QuestionType.multipleChoice ||
             question.questionType == QuestionType.trueFalse) {
-          _correctOption.value = question.options.indexOf(question.correctAnswer);
+          _correctOption.value =
+              question.options.indexOf(question.correctAnswer);
         } else {
           // For FillInTheBlank and ShortAnswer, the correct answer is stored in 'correctAnswer'
           // and should be placed into the first option field (_option1Controller)
@@ -716,8 +718,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             (constraints.maxWidth < 800)
                 ? _buildMobileLayout()
                 : _buildWebLayout(),
-                  
-          ], 
+          ],
         );
       }),
     );
@@ -772,8 +773,11 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                 _currentView == 'students') // <--- ADD THIS
             ? IconButton(
                 icon: const Icon(Icons.arrow_back),
-                onPressed: () { // <--- MODIFIED TO USE A FUNCTION
-                  if (_currentView == 'upload' && _questionToEdit != null && _selectedSubjectForQuestions != null) {
+                onPressed: () {
+                  // <--- MODIFIED TO USE A FUNCTION
+                  if (_currentView == 'upload' &&
+                      _questionToEdit != null &&
+                      _selectedSubjectForQuestions != null) {
                     // When editing a question, go back to the subject's question list
                     _showQuestionsForSubject(_selectedSubjectForQuestions!);
                   } else {
@@ -937,7 +941,21 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
             isSelected: _currentView == 'history', onTap: _showHistory),
         const Spacer(),
         _buildNavSectionTitle('PRODUCT'),
-        _buildNavItem(Icons.help_outline, 'Help', onTap: () {}),
+        _buildNavItem(
+          Icons.help_outline,
+          'Help',
+          isSelected: false,
+          onTap: () {
+            // This is the key part: use Navigator.push to navigate to the HelpScreen.
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    const TeacherHelpScreen(), // The screen you want to go to
+              ),
+            );
+          },
+        ),
         _buildLogoutButton(),
       ],
     );
@@ -1437,11 +1455,12 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                                       _selectedSubjectForQuestions!);
                                 } else {
                                   // Fallback: Go back to the main quiz list
-                                  _showQuizList(); 
+                                  _showQuizList();
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.pinkAccent, // Use a distinct color for Cancel
+                                backgroundColor: Colors
+                                    .pinkAccent, // Use a distinct color for Cancel
                                 foregroundColor: Colors.white,
                                 minimumSize: const Size(double.infinity, 52),
                                 textStyle: const TextStyle(
@@ -1831,7 +1850,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
 
   Widget _buildDrawerItem(
       String view, String title, IconData icon, VoidCallback onTap,
-      {int badgeCount = 0}) { // <--- MODIFIED
+      {int badgeCount = 0}) {
+    // <--- MODIFIED
     final isSelected = _currentView == view;
 
     return Material(
@@ -1839,7 +1859,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
       child: ListTile(
         leading:
             Icon(icon, color: isSelected ? Colors.white : Colors.grey.shade400),
-        title: Row( // <--- ADDED Row for badge
+        title: Row(
+          // <--- ADDED Row for badge
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
@@ -1876,7 +1897,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildEnrollmentRequestsDrawerItem() { // <--- ADD NEW FUNCTION
+  Widget _buildEnrollmentRequestsDrawerItem() {
+    // <--- ADD NEW FUNCTION
     final teacherUid = _user?.uid;
 
     if (teacherUid == null) {
@@ -1894,7 +1916,8 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
           Icons.person_add,
           () {
             Navigator.of(context).pop();
-            Navigator.pushNamed(context, '/enrollment-requests'); // Close drawer
+            Navigator.pushNamed(
+                context, '/enrollment-requests'); // Close drawer
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -1925,7 +1948,7 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
                   child: const Text('Cancel'),
                   onPressed: () {
                     Navigator.of(context).pop();
-                     // Close the dialog
+                    // Close the dialog
                   },
                 ),
                 TextButton(
