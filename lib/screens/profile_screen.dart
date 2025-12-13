@@ -57,17 +57,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _studentCount = studentSnapshot.docs.length;
       } else if (_userRole == 'student') {
         final historySnapshot = await FirebaseFirestore.instance
-            .collection('quiz_history')
-            .where('userId', isEqualTo: _user!.uid)
+            .collection('quiz_attempts') // Changed from 'quiz_history'
+            .where('studentId', isEqualTo: _user!.uid) // Changed from 'userId'
             .get();
         _quizzesTaken = historySnapshot.docs.length;
 
         if (_quizzesTaken > 0) {
-          double totalScore = 0;
+          double totalAccuracy = 0;
+
           for (var doc in historySnapshot.docs) {
-            totalScore += doc.data()['score'] ?? 0;
+            final data = doc.data();
+
+            // 1. Get correct answers and total questions safely
+            int correct = data['correctAnswers'] ?? 0;
+            int total = data['totalQuestions'] ??
+                1; // Default to 1 to avoid divide by zero
+
+            // 2. Calculate accuracy for this specific quiz (e.g., 0.8 for 80%)
+            double accuracy = (total > 0) ? (correct / total) : 0.0;
+
+            totalAccuracy += accuracy;
           }
-          _averageScore = totalScore / _quizzesTaken;
+
+          // 3. Average the accuracies and multiply by 100 to get a percentage (e.g., 85.0)
+          _averageScore = (totalAccuracy / _quizzesTaken) * 100;
+        } else {
+          _averageScore = 0.0;
         }
       }
     } catch (e) {
