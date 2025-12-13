@@ -527,13 +527,26 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   Widget _buildBrowseView() {
     switch (_browseView) {
       case 'subjects':
-        return _buildSubjectsList();
+        return _buildConstrainedListContainer(_buildSubjectsList()); // <--- WRAPPER APPLIED
       case 'teachers':
-        return _buildTeachersList();
+        return _buildConstrainedListContainer(_buildTeachersList()); // <--- WRAPPER APPLIED
       case 'main':
       default:
         return _buildBrowseMenu();
     }
+  }
+  
+  // NEW HELPER FUNCTION for list constraint
+  Widget _buildConstrainedListContainer(Widget child) {
+    return Center(
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 800), // Max width for content readability
+        child: Padding(
+          padding: const EdgeInsets.all(24.0), // Consistent padding
+          child: child,
+        ),
+      ),
+    );
   }
 
   Widget _buildBrowseMenu() {
@@ -634,7 +647,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
             };
 
             return ListView.builder(
-              padding: const EdgeInsets.all(24.0),
               itemCount: subjects.length,
               itemBuilder: (context, index) {
                 final subject = subjects[index];
@@ -690,9 +702,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                         style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                            fontFamily: 'PressStart2P')),
+                            fontFamily: 'PressStart2P'),
+                        overflow: TextOverflow.ellipsis), // <--- ADDED constraint
                     subtitle: Text('by $teacherName',
-                        style: const TextStyle(color: Colors.white70)),
+                        style: const TextStyle(color: Colors.white70),
+                        overflow: TextOverflow.ellipsis), // <--- ADDED constraint
                     trailing: const Icon(Icons.arrow_forward_ios,
                         color: Colors.greenAccent),
                     onTap: () async {
@@ -733,7 +747,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
   Widget _buildSubjectListWithoutTeachers(
       List<QueryDocumentSnapshot> subjects) {
     return ListView.builder(
-      padding: const EdgeInsets.all(24.0),
       itemCount: subjects.length,
       itemBuilder: (context, index) {
         final subject = subjects[index];
@@ -750,9 +763,11 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                 style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontFamily: 'PressStart2P')),
+                    fontFamily: 'PressStart2P'),
+                overflow: TextOverflow.ellipsis), // <--- ADDED constraint
             subtitle: const Text('by Unknown Teacher',
-                style: TextStyle(color: Colors.white70)),
+                style: TextStyle(color: Colors.white70),
+                overflow: TextOverflow.ellipsis), // <--- ADDED constraint
             trailing:
                 const Icon(Icons.arrow_forward_ios, color: Colors.greenAccent),
             onTap: () {
@@ -795,7 +810,6 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
         final teachers = snapshot.data!.docs;
 
         return ListView.builder(
-          padding: const EdgeInsets.all(24.0),
           itemCount: teachers.length,
           itemBuilder: (context, index) {
             final teacher = teachers[index];
@@ -814,7 +828,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        fontFamily: 'PressStart2P')),
+                        fontFamily: 'PressStart2P'),
+                    overflow: TextOverflow.ellipsis), // <--- ADDED constraint
                 trailing: const Icon(Icons.arrow_forward_ios,
                     color: Colors.greenAccent),
                 onTap: () async {
@@ -971,7 +986,8 @@ class _StudentDashboardScreenState extends State<StudentDashboardScreen> {
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
-                                    fontFamily: 'PressStart2P')),
+                                    fontFamily: 'PressStart2P'),
+                                overflow: TextOverflow.ellipsis), // <--- ADDED constraint
                           ),
                         );
                       },

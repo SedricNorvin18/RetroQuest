@@ -1025,71 +1025,78 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
     );
   }
 
-  Widget _buildSubjectList() {
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'My Quizzes',
-            style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontFamily: 'PressStart2P'),
-          ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _loadSubjects,
-              color: Colors.greenAccent,
-              backgroundColor: const Color(0xFF1E2336),
-              child: ReorderableListView.builder(
-                itemCount: _subjects.length,
-                onReorder: _updateSubjectOrder,
-                itemBuilder: (context, index) {
-                  final subject = _subjects[index];
-                  return Card(
-                    key: ValueKey(subject['id']),
-                    margin: const EdgeInsets.symmetric(vertical: 8.0),
-                    color: Colors.black54,
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: ListTile(
-                      title: Text(subject['id'],
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                              fontFamily: 'PressStart2P')),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.white70),
-                            onPressed: () => _editSubject(subject['id']),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Colors.pinkAccent),
-                            onPressed: () => _deleteSubject(subject['id']),
-                          ),
-                        ],
-                      ),
-                      onTap: () => _showQuestionsForSubject(subject['id']),
-                    ),
-                  );
-                },
+ Widget _buildSubjectList() {
+    // WRAP: Center -> ConstrainedBox to limit width for readability
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'My Quizzes',
+                style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontFamily: 'PressStart2P'),
               ),
-            ),
+              const SizedBox(height: 24),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadSubjects,
+                  color: Colors.greenAccent,
+                  backgroundColor: const Color(0xFF1E2336),
+                  child: ReorderableListView.builder(
+                    itemCount: _subjects.length,
+                    onReorder: _updateSubjectOrder,
+                    itemBuilder: (context, index) {
+                      final subject = _subjects[index];
+                      return Card(
+                        key: ValueKey(subject['id']),
+                        margin: const EdgeInsets.symmetric(vertical: 8.0),
+                        color: Colors.black54,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: ListTile(
+                          title: Text(subject['id'],
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  fontFamily: 'PressStart2P')),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.edit,
+                                    color: Colors.white70),
+                                onPressed: () => _editSubject(subject['id']),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.pinkAccent),
+                                onPressed: () => _deleteSubject(subject['id']),
+                              ),
+                            ],
+                          ),
+                          onTap: () => _showQuestionsForSubject(subject['id']),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildQuestionsList() {
+ Widget _buildQuestionsList() {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: StreamBuilder<QuerySnapshot>(
@@ -1110,122 +1117,125 @@ class _TeacherDashboardScreenState extends State<TeacherDashboardScreen> {
               .map((doc) => Question.fromFirestore(doc))
               .toList();
 
-          // --- NEW: Empty State Check ---
           if (questions.isEmpty) {
-            return _buildQuestionsEmptyState(); // Use a dedicated helper function
+            return _buildQuestionsEmptyState();
           }
-          // --- END NEW ---
 
-          return Column(
-            children: [
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.all(24.0),
-                  itemCount: questions.length,
-                  itemBuilder: (context, index) {
-                    final question = questions[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 8.0),
-                      color: Colors.black54,
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12)),
-                      child: ListTile(
-                        title: Text(question.text,
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white)),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Type: ${question.questionType.toString().split('.').last.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')}',
-                              style: TextStyle(
-                                  color: Colors.grey.shade400, fontSize: 12),
-                            ),
-                            const SizedBox(height: 4),
-                            // --- Conditional Answer Display ---
-                            if (question.questionType ==
-                                    QuestionType.fillInTheBlank ||
-                                question.questionType ==
-                                    QuestionType.shortAnswer)
-                              Text(
-                                'Correct Answer: "${question.correctAnswer}"',
+          // WRAP: Center -> ConstrainedBox to limit width for readability
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 800),
+              child: Column(
+                children: [
+                  Expanded(
+                    child: ListView.builder(
+                      padding: const EdgeInsets.all(24.0),
+                      itemCount: questions.length,
+                      itemBuilder: (context, index) {
+                        final question = questions[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8.0),
+                          color: Colors.black54,
+                          elevation: 4,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                          child: ListTile(
+                            title: Text(question.text,
                                 style: const TextStyle(
-                                  color: Colors.greenAccent,
-                                  fontWeight: FontWeight.bold,
-                                  fontStyle: FontStyle.italic,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            if (question.questionType ==
-                                    QuestionType.multipleChoice ||
-                                question.questionType == QuestionType.trueFalse)
-                              ...question.options.map((option) {
-                                return Text(
-                                  option,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Type: ${question.questionType.toString().split('.').last.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}')}',
                                   style: TextStyle(
-                                    color: question.correctAnswer == option
-                                        ? Colors.greenAccent
-                                        : Colors.pinkAccent,
+                                      color: Colors.grey.shade400,
+                                      fontSize: 12),
+                                ),
+                                const SizedBox(height: 4),
+                                if (question.questionType ==
+                                        QuestionType.fillInTheBlank ||
+                                    question.questionType ==
+                                        QuestionType.shortAnswer)
+                                  Text(
+                                    'Correct Answer: "${question.correctAnswer}"',
+                                    style: const TextStyle(
+                                      color: Colors.greenAccent,
+                                      fontWeight: FontWeight.bold,
+                                      fontStyle: FontStyle.italic,
+                                      fontSize: 14,
+                                    ),
                                   ),
-                                );
-                              }),
-                            // --- End Conditional Answer Display ---
-                            if (question.timeLimit != null)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Text('Time: ${question.timeLimit}s',
-                                    style:
-                                        const TextStyle(color: Colors.white70)),
-                              )
-                          ],
-                        ),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            IconButton(
-                              icon:
-                                  const Icon(Icons.edit, color: Colors.white70),
-                              onPressed: () => _showUploadForm(
-                                  question: question,
-                                  subjectId: _selectedSubjectForQuestions),
+                                if (question.questionType ==
+                                        QuestionType.multipleChoice ||
+                                    question.questionType ==
+                                        QuestionType.trueFalse)
+                                  ...question.options.map((option) {
+                                    return Text(
+                                      option,
+                                      style: TextStyle(
+                                        color: question.correctAnswer == option
+                                            ? Colors.greenAccent
+                                            : Colors.pinkAccent,
+                                      ),
+                                    );
+                                  }),
+                                if (question.timeLimit != null)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: Text('Time: ${question.timeLimit}s',
+                                        style: const TextStyle(
+                                            color: Colors.white70)),
+                                  )
+                              ],
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.delete,
-                                  color: Colors.pinkAccent),
-                              onPressed: () {
-                                // Calls the new method that handles all async logic and mounted checks
-                                _confirmAndDeleteQuestion(
-                                    question, _selectedSubjectForQuestions!);
-                              },
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit,
+                                      color: Colors.white70),
+                                  onPressed: () => _showUploadForm(
+                                      question: question,
+                                      subjectId: _selectedSubjectForQuestions),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.pinkAccent),
+                                  onPressed: () {
+                                    _confirmAndDeleteQuestion(question,
+                                        _selectedSubjectForQuestions!);
+                                  },
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: ElevatedButton.icon(
-                  onPressed: () =>
-                      _showUploadForm(subjectId: _selectedSubjectForQuestions),
-                  icon: const Icon(Icons.add, color: Colors.black),
-                  label: const Text('Add Question'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.greenAccent,
-                    foregroundColor: Colors.black,
-                    minimumSize: const Size(double.infinity, 52),
-                    textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'PressStart2P'),
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                ),
-              )
-            ],
+                  Padding(
+                    padding: const EdgeInsets.all(24.0),
+                    child: ElevatedButton.icon(
+                      onPressed: () => _showUploadForm(
+                          subjectId: _selectedSubjectForQuestions),
+                      icon: const Icon(Icons.add, color: Colors.black),
+                      label: const Text('Add Question'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.greenAccent,
+                        foregroundColor: Colors.black,
+                        minimumSize: const Size(double.infinity, 52),
+                        textStyle: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'PressStart2P'),
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
           );
         },
       ),
