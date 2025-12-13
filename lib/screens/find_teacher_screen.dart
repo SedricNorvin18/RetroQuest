@@ -166,54 +166,61 @@ class FindTeacherScreenState extends State<FindTeacherScreen> {
             fit: BoxFit.cover,
           ),
         ),
-        child: Column(
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: TextField(
-                controller: _searchController,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: 'Search by name or email...',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-                  prefixIcon:
-                      Icon(Icons.search, color: Colors.white.withValues(alpha: .7)),
-                  filled: true,
-                  fillColor: const Color(0xFF2A2D49),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 15.0, horizontal: 20.0),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide:
-                        const BorderSide(color: Colors.pinkAccent, width: 2),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide: BorderSide(
-                        color: Colors.pinkAccent.withValues(alpha: .5), width: 2),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(15),
-                    borderSide:
-                        const BorderSide(color: Colors.pinkAccent, width: 2),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0, vertical: 8.0),
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Search by name or email...',
+                      hintStyle:
+                          TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+                      prefixIcon:
+                          Icon(Icons.search, color: Colors.white.withValues(alpha: 0.7)),
+                      filled: true,
+                      fillColor: const Color(0xFF2A2D49),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 15.0, horizontal: 20.0),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                            color: Colors.pinkAccent, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: BorderSide(
+                            color: Colors.pinkAccent.withValues(alpha: 0.5),
+                            width: 2),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(15),
+                        borderSide: const BorderSide(
+                            color: Colors.pinkAccent, width: 2),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      if (_debounce?.isActive ?? false) _debounce!.cancel();
+                      _debounce = Timer(const Duration(milliseconds: 500), () {
+                        _runSearch(value.trim());
+                      });
+                      setState(() {
+                        _searchQuery = value.trim();
+                      });
+                    },
                   ),
                 ),
-                onChanged: (value) {
-                  if (_debounce?.isActive ?? false) _debounce!.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 500), () {
-                    _runSearch(value.trim());
-                  });
-                  setState(() {
-                    _searchQuery = value.trim();
-                  });
-                },
-              ),
+                Expanded(
+                  child: _buildBody(),
+                ),
+              ],
             ),
-            Expanded(
-              child: _buildBody(),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -285,7 +292,7 @@ class FindTeacherScreenState extends State<FindTeacherScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
             side:
-                BorderSide(color: Colors.blueAccent.withValues(alpha: .5), width: 1),
+                BorderSide(color: Colors.blueAccent.withValues(alpha: 0.5), width: 1),
           ),
           child: ListTile(
             leading: CircleAvatar(
@@ -311,7 +318,7 @@ class FindTeacherScreenState extends State<FindTeacherScreen> {
             subtitle: Text(
               teacher['email'],
               style:
-                  TextStyle(color: Colors.white.withValues(alpha: .7), fontSize: 11),
+                  TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11),
             ),
             trailing: ElevatedButton(
               style: ElevatedButton.styleFrom(
